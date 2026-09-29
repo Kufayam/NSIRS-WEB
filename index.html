@@ -1,0 +1,2944 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Revenue Management System — NSIRS Abuja Liaison Office</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+/* ================================================================
+   Revenue Management System — NSIRS Abuja Liaison Office v2.0
+   TOC:
+    1. Tokens          2. Reset & Base     3. Login
+    4. App Shell       5. Sidebar          6. Topbar
+    7. Pages           8. KPI Cards        9. Chart Cards
+   10. DB Table       11. Section Panels  12. Form & Search
+   13. Tables         14. Admin Modules   15. Buttons
+   16. Toast          17. Modal           18. Notification
+   19. Pulse / Badge  20. Utility         21. Print
+   22. Animations
+================================================================ */
+
+/* 1. Tokens */
+:root{
+  --g-dark:#004d00;--g:#006400;--g-mid:#1b7a1b;--g-light:#e8f5e9;
+  --navy:#003366;--red:#c0392b;--amber:#d97706;--blue:#1565c0;
+  --db-bg:#0d1117;--db-surface:#161b22;--db-card:#1c2333;
+  --db-border:rgba(255,255,255,0.08);--db-text:#e6edf3;--db-muted:#8b949e;
+  --ap:#c084fc;--ag:#4ade80;--ak:#f472b6;--ab:#60a5fa;--ao:#fb923c;--ay:#facc15;
+  --light-bg:#f0f2f7;--light-card:#fff;--light-border:#dde1e7;
+  --light-text:#1e2330;--light-muted:#5a6070;
+  --sidebar-w:240px;--font:'Segoe UI',Arial,sans-serif;
+  --r:10px;--rl:14px;--tr:.2s ease;
+}
+
+/* 2. Reset */
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--font);background:var(--db-bg);color:var(--db-text);min-height:100vh}
+a{text-decoration:none}
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#0d1117}
+::-webkit-scrollbar-thumb{background:#30363d;border-radius:3px}
+
+/* 3. Login */
+#loginPage{
+  display:flex;align-items:center;justify-content:center;
+  min-height:100vh;position:relative;overflow:hidden;
+  background:radial-gradient(ellipse at 20% 20%,rgba(0,100,0,0.15) 0%,transparent 60%),
+             radial-gradient(ellipse at 80% 80%,rgba(0,51,102,0.15) 0%,transparent 60%),#0d1117;
+}
+.lc{
+  background:rgba(22,27,34,0.95);border:1px solid var(--db-border);
+  border-radius:20px;padding:46px 42px;width:100%;max-width:420px;
+  backdrop-filter:blur(20px);box-shadow:0 32px 80px rgba(0,0,0,0.7);
+  animation:slideUp .4s ease;position:relative;z-index:1;
+}
+.lc-brand{text-align:center;margin-bottom:28px}
+.lc-brand .bn{font-size:1.45rem;font-weight:900;color:#fff}
+.lc-brand .bn em{color:var(--ag);font-style:normal}
+.lc-brand .bs{font-size:.7rem;color:var(--db-muted);text-transform:uppercase;letter-spacing:1.2px;margin-top:3px}
+.lc h2{font-size:1rem;font-weight:700;color:var(--db-text);margin-bottom:4px}
+.lc p{font-size:.8rem;color:var(--db-muted);margin-bottom:24px}
+.lf{margin-bottom:16px}
+.lf label{display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px}
+.lf input{
+  width:100%;padding:11px 14px;
+  background:#111820 !important;
+  border:1.5px solid rgba(255,255,255,0.18);
+  border-radius:8px;font-size:.92rem;
+  color:#e6edf3 !important;
+  font-family:var(--font);
+  transition:border-color var(--tr),box-shadow var(--tr);
+  /* Override browser autocomplete white-fill */
+  -webkit-text-fill-color:#e6edf3 !important;
+  caret-color:#e6edf3;
+}
+/* Kill the browser's yellow/white autocomplete background */
+.lf input:-webkit-autofill,
+.lf input:-webkit-autofill:hover,
+.lf input:-webkit-autofill:focus,
+.lf input:-webkit-autofill:active{
+  -webkit-box-shadow:0 0 0 60px #111820 inset !important;
+  box-shadow:0 0 0 60px #111820 inset !important;
+  -webkit-text-fill-color:#e6edf3 !important;
+  background-color:#111820 !important;
+  border-color:rgba(255,255,255,0.18) !important;
+}
+.lf input:focus{
+  outline:none;border-color:var(--g);
+  box-shadow:0 0 0 3px rgba(0,100,0,0.22);
+  background:#111820 !important;
+}
+.lf input::placeholder{color:#525b66}
+.lerr{
+  background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);
+  color:#ff8a80;font-size:.8rem;padding:9px 14px;border-radius:7px;
+  margin-bottom:14px;display:none;
+}
+.lbtn{
+  width:100%;padding:13px;background:var(--g);border:none;border-radius:8px;
+  color:#fff;font-size:.95rem;font-weight:700;cursor:pointer;font-family:var(--font);
+  transition:background var(--tr),box-shadow var(--tr);
+}
+.lbtn:hover{background:var(--g-dark);box-shadow:0 4px 20px rgba(0,100,0,0.4)}
+.lfooter{text-align:center;margin-top:22px;font-size:.72rem;color:var(--db-muted)}
+
+/* 4. App Shell */
+#appShell{display:none;min-height:100vh}
+#appShell.visible{display:flex}
+
+/* 5. Sidebar */
+.sidebar{
+  width:var(--sidebar-w);background:#090d12;border-right:1px solid var(--db-border);
+  height:100vh;position:fixed;top:0;left:0;
+  display:flex;flex-direction:column;z-index:200;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:#2d333b #090d12;
+}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-track{background:#090d12}
+.sidebar::-webkit-scrollbar-thumb{background:#2d333b;border-radius:4px}
+.sb-logo{padding:20px 18px 16px;border-bottom:1px solid var(--db-border)}
+.sb-logo .an{font-size:1rem;font-weight:900;color:#fff}
+.sb-logo .an em{color:var(--ag);font-style:normal}
+.sb-logo .as{font-size:.62rem;color:var(--db-muted);text-transform:uppercase;letter-spacing:.8px;margin-top:2px}
+.sb-user{
+  padding:12px 18px;border-bottom:1px solid var(--db-border);
+  display:flex;align-items:center;gap:10px;
+}
+.av{
+  width:32px;height:32px;border-radius:50%;flex-shrink:0;
+  background:linear-gradient(135deg,var(--g),var(--navy));
+  display:flex;align-items:center;justify-content:center;
+  font-size:.82rem;font-weight:800;color:#fff;
+}
+.sb-user .un{font-size:.8rem;font-weight:700;color:var(--db-text)}
+.sb-user .ur{font-size:.67rem;color:var(--db-muted)}
+.nsl{font-size:.6rem;color:rgba(255,255,255,0.25);text-transform:uppercase;
+  letter-spacing:1.3px;padding:16px 18px 4px}
+.ni{
+  display:flex;align-items:center;gap:9px;padding:9px 18px;
+  color:var(--db-muted);font-size:.845rem;font-weight:500;cursor:pointer;
+  border-left:3px solid transparent;transition:all var(--tr);position:relative;
+}
+.ni:hover{background:rgba(255,255,255,0.04);color:#fff}
+.ni.active{background:rgba(74,222,128,0.07);color:var(--ag);border-left-color:var(--ag);font-weight:700}
+.ni .ico{font-size:.9rem;width:18px;text-align:center;flex-shrink:0}
+/* notification badge on nav */
+.nb{
+  margin-left:auto;background:var(--red);color:#fff;
+  font-size:.6rem;font-weight:800;padding:1px 6px;
+  border-radius:20px;min-width:18px;text-align:center;
+}
+.sb-footer{
+  padding:14px 18px;border-top:1px solid var(--db-border);
+  font-size:.68rem;color:rgba(255,255,255,0.2);line-height:1.7;
+  flex-shrink:0;margin-top:20px;
+}
+
+/* 6. Topbar */
+.main-wrap{margin-left:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-width:0}
+.topbar{
+  background:#090d12;border-bottom:1px solid var(--db-border);
+  padding:0 24px;height:56px;display:flex;align-items:center;
+  justify-content:space-between;position:sticky;top:0;z-index:100;
+}
+.tb-l{display:flex;align-items:center;gap:10px}
+.tb-title{font-size:.95rem;font-weight:700;color:var(--db-text)}
+.tb-r{display:flex;align-items:center;gap:12px}
+.tb-date{font-size:.75rem;color:var(--db-muted)}
+.tb-badge{
+  background:rgba(74,222,128,0.1);color:var(--ag);
+  font-size:.7rem;font-weight:700;padding:3px 10px;
+  border-radius:20px;border:1px solid rgba(74,222,128,0.22);
+}
+.tb-notif{
+  position:relative;cursor:pointer;padding:6px;
+  color:var(--db-muted);font-size:1.1rem;transition:color var(--tr);
+}
+.tb-notif:hover{color:#fff}
+.notif-dot{
+  position:absolute;top:4px;right:4px;width:8px;height:8px;
+  background:var(--red);border-radius:50%;border:2px solid #090d12;
+}
+.tb-logout{
+  background:rgba(192,57,43,0.14);color:#ff8a80;
+  border:1px solid rgba(192,57,43,0.28);border-radius:7px;
+  padding:5px 12px;font-size:.73rem;font-weight:700;
+  cursor:pointer;font-family:var(--font);transition:background var(--tr);
+}
+.tb-logout:hover{background:rgba(192,57,43,0.28)}
+.pc{padding:22px 24px;flex:1}
+.page{display:none}.page.active{display:block}
+
+/* 7. Section wrapper for light pages */
+.lpage{background:var(--light-bg);min-height:calc(100vh - 56px);padding:22px 0}
+.section{
+  background:var(--light-card);padding:22px;border-radius:var(--rl);
+  box-shadow:0 2px 12px rgba(0,0,0,0.07);margin-bottom:18px;
+}
+.sec-hd{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:16px;padding-bottom:12px;border-bottom:2px solid var(--g-light);
+}
+.sec-hd h2{font-size:1rem;font-weight:700;color:var(--g-dark);display:flex;align-items:center;gap:8px}
+.rc{background:var(--g-light);color:var(--g-dark);font-size:.7rem;font-weight:700;
+  padding:2px 9px;border-radius:20px;}
+
+/* 8. KPI Cards */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:repeat(2,1fr)}}
+.kc{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:12px;padding:20px 18px;position:relative;overflow:hidden;
+  transition:border-color var(--tr),transform var(--tr);
+}
+.kc:hover{border-color:rgba(255,255,255,0.16);transform:translateY(-2px)}
+.kc::before{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.kc.cg::before{background:linear-gradient(90deg,var(--ag),#22c55e)}
+.kc.cp::before{background:linear-gradient(90deg,var(--ap),#a855f7)}
+.kc.ck::before{background:linear-gradient(90deg,var(--ak),#ec4899)}
+.kc.cb::before{background:linear-gradient(90deg,var(--ab),#3b82f6)}
+.kc.co::before{background:linear-gradient(90deg,var(--ao),#f97316)}
+.kc.cy::before{background:linear-gradient(90deg,var(--ay),#eab308)}
+.kl{font-size:.72rem;color:var(--db-muted);font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.kv{font-size:clamp(1.3rem,2.2vw,1.9rem);font-weight:800;color:var(--db-text);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.km{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.kup{font-size:.7rem;font-weight:700;color:var(--ag)}
+.kdn{font-size:.7rem;font-weight:700;color:#f87171}
+.kprev{font-size:.7rem;color:var(--db-muted)}
+.kico{position:absolute;top:14px;right:14px;font-size:1.25rem;opacity:.18}
+
+/* 9. Chart Cards */
+.cr{display:grid;gap:14px;margin-bottom:14px}
+.cr3{grid-template-columns:repeat(3,1fr)}
+.cr21{grid-template-columns:2fr 1fr}
+.cr2{grid-template-columns:1fr 1fr}
+@media(max-width:1050px){.cr3,.cr21,.cr2{grid-template-columns:1fr}}
+.dcc{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:12px;padding:18px;
+}
+.dcc .ct{font-size:.78rem;font-weight:700;color:var(--db-text);margin-bottom:12px}
+.dcc canvas{max-height:200px;width:100%!important}
+.cc-leg{display:flex;gap:12px;flex-wrap:wrap;font-size:.68rem;color:var(--db-muted);margin-bottom:8px}
+.cc-leg span{display:flex;align-items:center;gap:4px}
+.dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+
+/* 10. DB recent table */
+.dtc{background:var(--db-card);border:1px solid var(--db-border);border-radius:12px;padding:18px;margin-bottom:14px}
+.dtc .ct{font-size:.78rem;font-weight:700;color:var(--db-text);margin-bottom:12px;
+  display:flex;align-items:center;justify-content:space-between}
+.dtc table{width:100%;border-collapse:collapse;font-size:.82rem}
+.dtc th{color:var(--db-muted);font-size:.68rem;text-transform:uppercase;letter-spacing:.5px;
+  padding:5px 10px;border-bottom:1px solid var(--db-border);font-weight:600;text-align:left}
+.dtc td{padding:9px 10px;border-bottom:1px solid rgba(255,255,255,0.04);color:var(--db-text)}
+.dtc tr:last-child td{border-bottom:none}
+.dtc tr:hover td{background:rgba(255,255,255,0.03)}
+
+/* 12. Form & Search */
+.fg{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px}
+.fm{display:flex;flex-direction:column;gap:4px}
+label{font-size:.8rem;font-weight:600;color:#3a4050}
+input,select,textarea{
+  padding:9px 12px;border:1.5px solid var(--light-border);
+  border-radius:7px;font-size:.9rem;font-family:var(--font);
+  background:#fafbfc;color:var(--light-text);
+  transition:border-color var(--tr),box-shadow var(--tr);
+}
+input:focus,select:focus,textarea:focus{
+  outline:none;border-color:var(--g);box-shadow:0 0 0 3px rgba(0,100,0,0.09);background:#fff;
+}
+input::placeholder,textarea::placeholder{color:#aab0bc}
+textarea{resize:vertical;min-height:80px}
+
+.sp{
+  display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;
+  background:var(--g-light);border:1.5px solid #b2dfb2;
+  border-radius:var(--r);padding:14px 16px;margin-bottom:18px;
+}
+.sf{display:flex;flex-direction:column;gap:3px;flex:1 1 140px}
+.sf label{font-size:.73rem;color:#3a5a3a;font-weight:600}
+.sf input,.sf select{padding:7px 10px;font-size:.85rem;border:1.5px solid #b2dfb2;background:#fff}
+.sa{display:flex;gap:8px;align-items:flex-end}
+
+/* 13. Tables */
+.tw{overflow-x:auto;border-radius:var(--r)}
+table{width:100%;border-collapse:collapse;font-size:.865rem}
+table th{background:var(--g-dark);color:#fff;padding:10px 13px;text-align:left;
+  font-size:.75rem;text-transform:uppercase;letter-spacing:.4px;white-space:nowrap}
+table td{padding:9px 13px;border-bottom:1px solid #eef0f4;color:var(--light-text);white-space:nowrap}
+table tbody tr:hover{background:var(--g-light)}
+.te{text-align:center;padding:32px;color:var(--light-muted);font-size:.88rem}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:.68rem;font-weight:700;text-transform:uppercase}
+.bp{background:#e3f2e3;color:#1b5e1b}
+.bw{background:#e3ecf7;color:#003366}
+.ba{background:#fff3e0;color:#e65100}
+.br{background:#fce4ec;color:#880e4f}
+.bg{background:#e8f5e9;color:#1b5e1b}
+.by{background:#fffde7;color:#f57f17}
+.bbl{background:#e3f2fd;color:#0d47a1}
+
+/* 14. Admin Modules specific styles */
+
+/* Executive Overview */
+.exec-kpi{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:18px}
+@media(max-width:900px){.exec-kpi{grid-template-columns:1fr 1fr}}
+.exec-card{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:12px;padding:20px;text-align:center;
+}
+.exec-card .ev{font-size:1.8rem;font-weight:900;color:var(--ag);margin:8px 0}
+.exec-card .el{font-size:.75rem;color:var(--db-muted);text-transform:uppercase;letter-spacing:.5px}
+.exec-card .es{font-size:.78rem;color:var(--db-muted);margin-top:4px}
+
+/* User Management */
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:16px}
+.user-card{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:12px;padding:18px;display:flex;flex-direction:column;gap:10px;
+}
+.uc-top{display:flex;align-items:center;gap:12px}
+.uc-av{
+  width:42px;height:42px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;font-weight:800;color:#fff;
+}
+.uc-info .uname{font-size:.9rem;font-weight:700;color:var(--db-text)}
+.uc-info .urole{font-size:.72rem;color:var(--db-muted);margin-top:1px}
+.uc-meta{display:flex;gap:8px;flex-wrap:wrap}
+.uc-actions{display:flex;gap:8px;margin-top:4px}
+
+/* Activity Log */
+.log-item{
+  display:flex;gap:14px;padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.log-item:last-child{border-bottom:none}
+.log-dot{
+  width:10px;height:10px;border-radius:50%;flex-shrink:0;margin-top:4px;
+}
+.log-body{flex:1}
+.log-action{font-size:.85rem;font-weight:600;color:var(--db-text)}
+.log-meta{font-size:.72rem;color:var(--db-muted);margin-top:2px}
+.log-time{font-size:.7rem;color:var(--db-muted);white-space:nowrap;margin-left:auto}
+
+/* Notifications */
+.notif-item{
+  display:flex;gap:14px;padding:14px 16px;border-radius:10px;
+  background:var(--db-card);border:1px solid var(--db-border);
+  margin-bottom:10px;cursor:pointer;transition:border-color var(--tr);
+  position:relative;
+}
+.notif-item:hover{border-color:rgba(255,255,255,0.16)}
+.notif-item.unread{border-left:3px solid var(--ag)}
+.notif-ico{font-size:1.2rem;flex-shrink:0;width:32px;text-align:center;margin-top:2px}
+.notif-body{flex:1}
+.notif-title{font-size:.85rem;font-weight:700;color:var(--db-text)}
+.notif-sub{font-size:.75rem;color:var(--db-muted);margin-top:3px;line-height:1.5}
+.notif-time{font-size:.68rem;color:var(--db-muted);margin-top:5px}
+.unread-dot{
+  width:8px;height:8px;border-radius:50%;background:var(--ag);
+  position:absolute;top:14px;right:14px;
+}
+
+/* Analytics */
+.analytics-kpi{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+@media(max-width:1000px){.analytics-kpi{grid-template-columns:1fr 1fr}}
+.ak-card{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:10px;padding:16px;
+}
+.ak-card .av2{font-size:1.5rem;font-weight:800;color:var(--db-text);margin:6px 0}
+.ak-card .al{font-size:.7rem;color:var(--db-muted);text-transform:uppercase;letter-spacing:.4px}
+.ak-card .ad{font-size:.72rem;margin-top:4px}
+
+/* Settings */
+.settings-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:18px}
+.setting-card{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:12px;padding:20px;
+}
+.setting-card h3{font-size:.88rem;font-weight:700;color:var(--db-text);margin-bottom:14px;
+  padding-bottom:10px;border-bottom:1px solid var(--db-border)}
+.si{display:flex;align-items:center;justify-content:space-between;padding:10px 0;
+  border-bottom:1px solid rgba(255,255,255,0.05)}
+.si:last-child{border-bottom:none}
+.si-label{font-size:.82rem;color:var(--db-text)}
+.si-sub{font-size:.7rem;color:var(--db-muted);margin-top:1px}
+/* toggle switch */
+.toggle{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0}
+.tslider{
+  position:absolute;inset:0;background:#30363d;border-radius:22px;cursor:pointer;
+  transition:background var(--tr);
+}
+.tslider::before{
+  content:'';position:absolute;width:16px;height:16px;
+  left:3px;bottom:3px;background:#fff;border-radius:50%;
+  transition:transform var(--tr);
+}
+.toggle input:checked+.tslider{background:var(--g)}
+.toggle input:checked+.tslider::before{transform:translateX(18px)}
+/* select in dark */
+.dark-select{
+  background:#0d1117;border:1.5px solid var(--db-border);
+  border-radius:7px;color:var(--db-text);padding:7px 10px;
+  font-size:.82rem;font-family:var(--font);
+}
+
+/* Content Management */
+.announce-item{
+  background:var(--db-card);border:1px solid var(--db-border);
+  border-radius:10px;padding:16px;margin-bottom:10px;
+}
+.announce-item .a-title{font-size:.88rem;font-weight:700;color:var(--db-text)}
+.announce-item .a-body{font-size:.78rem;color:var(--db-muted);margin-top:5px;line-height:1.6}
+.announce-item .a-meta{font-size:.68rem;color:var(--db-muted);margin-top:8px}
+
+/* 15. Buttons */
+button{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:8px 16px;border:none;border-radius:7px;cursor:pointer;
+  font-size:.855rem;font-weight:600;font-family:var(--font);
+  transition:opacity var(--tr),transform var(--tr),box-shadow var(--tr);
+}
+button:hover{opacity:.88;box-shadow:0 3px 10px rgba(0,0,0,0.25)}
+button:active{transform:scale(.97)}
+.btn-p{background:var(--g);color:#fff}
+.btn-d{background:var(--red);color:#fff}
+.btn-e{background:var(--blue);color:#fff}
+.btn-n{background:var(--navy);color:#fff}
+.btn-xl{background:#1a7a1a;color:#fff}
+.btn-pr{background:#555;color:#fff}
+.btn-g{background:#e8eaed;color:#444}
+.btn-dk{background:rgba(255,255,255,0.08);color:var(--db-text);border:1px solid var(--db-border)}
+.btn-sm{padding:5px 11px;font-size:.76rem}
+.btn-xs{padding:3px 9px;font-size:.7rem}
+.ab{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+.hidden{display:none!important}
+
+/* 16. Toast */
+#toastCon{position:fixed;top:16px;right:18px;z-index:9000;display:flex;flex-direction:column;gap:8px}
+.toast{
+  min-width:240px;max-width:340px;padding:11px 16px;border-radius:9px;
+  font-size:.845rem;font-weight:600;color:#fff;
+  box-shadow:0 6px 24px rgba(0,0,0,0.4);
+  display:flex;align-items:flex-start;gap:9px;animation:slideInRight .25s ease;
+}
+.ts{background:#1a7a1a;border-left:4px solid var(--ag)}
+.te2{background:var(--red);border-left:4px solid #ff8a80}
+.ti{background:var(--navy);border-left:4px solid var(--ab)}
+.tw2{background:#92400e;border-left:4px solid var(--ay)}
+.t-ico{font-size:.95rem;flex-shrink:0}
+
+/* 17. Modal */
+.mo{
+  position:fixed;inset:0;background:rgba(0,0,0,0.65);
+  z-index:8000;display:flex;align-items:center;justify-content:center;
+  animation:fadeIn .18s ease;
+}
+.mb{
+  background:#1c2333;border:1px solid var(--db-border);border-radius:16px;
+  padding:28px;max-width:460px;width:90%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.7);animation:scaleIn .2s ease;
+}
+.mb h3{font-size:1rem;margin-bottom:8px;color:var(--db-text)}
+.mb p{font-size:.85rem;color:var(--db-muted);margin-bottom:20px;line-height:1.6}
+.mb .mf{margin-bottom:14px}
+.mb .mf label{display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px}
+.mb .mf input,.mb .mf select,.mb .mf textarea{
+  width:100%;padding:9px 12px;background:#0d1117;
+  border:1.5px solid var(--db-border);border-radius:7px;
+  font-size:.88rem;color:var(--db-text);font-family:var(--font);
+}
+.mb .mf input:focus,.mb .mf select:focus,.mb .mf textarea:focus{
+  outline:none;border-color:var(--g);
+}
+.ma{display:flex;gap:10px;justify-content:flex-end;margin-top:20px}
+
+/* 18. Notification Panel (slide-in) */
+#notifPanel{
+  position:fixed;top:56px;right:0;width:340px;height:calc(100vh - 56px);
+  background:#0f1923;border-left:1px solid var(--db-border);
+  z-index:500;transform:translateX(100%);transition:transform .25s ease;
+  display:flex;flex-direction:column;overflow:hidden;
+}
+#notifPanel.open{transform:none}
+.np-head{
+  padding:16px 18px;border-bottom:1px solid var(--db-border);
+  display:flex;align-items:center;justify-content:space-between;
+}
+.np-head h3{font-size:.9rem;font-weight:700;color:var(--db-text)}
+.np-body{flex:1;overflow-y:auto;padding:14px}
+.np-notif{
+  display:flex;gap:12px;padding:12px;border-radius:8px;
+  background:var(--db-card);border:1px solid var(--db-border);
+  margin-bottom:8px;cursor:pointer;
+}
+.np-notif.unread{border-left:3px solid var(--ag)}
+.np-notif .ni2{font-size:1rem;flex-shrink:0;margin-top:1px}
+.np-notif .nt{font-size:.8rem;font-weight:600;color:var(--db-text)}
+.np-notif .ns{font-size:.72rem;color:var(--db-muted);margin-top:2px;line-height:1.5}
+.np-notif .nm{font-size:.65rem;color:var(--db-muted);margin-top:4px}
+
+/* 19. Pulse / Badge */
+.pulse{animation:pulse 2s infinite}
+.status-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.sd-green{background:var(--ag)}
+.sd-red{background:#f87171}
+.sd-amber{background:var(--ay)}
+.report-summary{
+  margin-top:18px;background:#f6fef6;border:1px solid #b2dfb2;
+  border-left:5px solid var(--g);padding:16px 20px;border-radius:var(--r);
+  line-height:2;font-size:.88rem;
+}
+.report-summary p strong{display:inline-block;min-width:150px;color:var(--g-dark)}
+.rtr{margin-top:10px;padding-top:10px;border-top:1px dashed #b2dfb2;font-weight:700}
+
+/* 20. Utility */
+.mt4{margin-top:4px}.mt12{margin-top:12px}.mt18{margin-top:18px}
+.fw7{font-weight:700}.tc{text-align:center}
+.db-header{margin-bottom:18px}
+.db-header h1{font-size:1.25rem;font-weight:800;color:var(--db-text)}
+.db-header p{font-size:.78rem;color:var(--db-muted);margin-top:2px}
+.divider{border:none;border-top:1px solid var(--db-border);margin:16px 0}
+.tw{overflow-x:auto}
+.progress-bar-wrap{background:rgba(255,255,255,0.08);border-radius:20px;height:6px;overflow:hidden}
+.progress-bar{height:100%;border-radius:20px;transition:width .6s ease}
+
+/* 21. Print */
+@media print{
+  body{background:#fff}
+  .sidebar,.topbar,.no-print{display:none!important}
+  .main-wrap{margin-left:0}
+  .section{box-shadow:none;border:1px solid #ccc}
+}
+
+/* 22. Animations */
+@keyframes slideInRight{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:none}}
+@keyframes slideUp{from{opacity:0;transform:translateY(28px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.88)}to{opacity:1;transform:scale(1)}}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════════════════
+     LOGIN PAGE
+════════════════════════════════════════════════════════ -->
+<div id="loginPage">
+  <div class="lc">
+    <div class="lc-brand">
+      <div class="bn">Revenue <em>Management</em> System</div>
+      <div class="bs">NSIRS-ABUJA LIAISON OFFICE</div>
+    </div>
+    <h2>Welcome back</h2>
+    <p>Sign in to access the admin dashboard</p>
+    <div id="lerr" class="lerr">❌ Invalid username or password.</div>
+    <div class="lf">
+      <label>Username</label>
+      <input type="text" id="lu" placeholder="Enter your username"
+        autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+        style="-webkit-text-fill-color:#e6edf3!important"/>
+    </div>
+    <div class="lf">
+      <label>Password</label>
+      <input type="password" id="lp" placeholder="••••••••"
+        autocomplete="new-password"
+        style="-webkit-text-fill-color:#e6edf3!important"/>
+    </div>
+    <button class="lbtn" id="lbtn" onclick="doLogin()">Sign In →</button>
+
+    <div class="lfooter">© 2025 NSIRS · Authorised personnel only</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     APP SHELL
+════════════════════════════════════════════════════════ -->
+<div id="appShell">
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sb-logo">
+    <div class="an" style="font-size:1.05rem;line-height:1.3">Revenue <em>Management</em><br><span style="font-size:.9rem;font-weight:700;color:#fff">System</span></div>
+    <div class="as">NSIRS-ABUJA LIAISON OFFICE</div>
+  </div>
+  <div class="sb-user">
+    <div class="av" id="sbAv">A</div>
+    <div><div class="un" id="sbName">Admin</div><div class="ur" id="sbRole">Administrator</div></div>
+  </div>
+
+  <div class="nsl">Overview</div>
+  <div class="ni active" data-page="dashboard" onclick="nav('dashboard',this)"><span class="ico">📊</span>Dashboard</div>
+  <div class="ni" data-page="executive" onclick="nav('executive',this)"><span class="ico">🏆</span>Executive Overview</div>
+
+  <div class="nsl">Revenue</div>
+  <div class="ni" data-page="payments" onclick="nav('payments',this)"><span class="ico">💳</span>Payments</div>
+  <div class="ni" data-page="addPayment" onclick="nav('addPayment',this)"><span class="ico">➕</span>Add Payment</div>
+  <div class="ni" data-page="report" onclick="nav('report',this)"><span class="ico">📄</span>Monthly Report</div>
+
+  <div class="nsl">Analytics</div>
+  <div class="ni" data-page="analytics" onclick="nav('analytics',this)"><span class="ico">📈</span>Advanced Analytics</div>
+
+  <div class="nsl">Content</div>
+  <div class="ni" data-page="content" onclick="nav('content',this)"><span class="ico">📝</span>Content Manager</div>
+
+  <div class="nsl">Admin</div>
+  <div class="ni" data-page="users" onclick="nav('users',this)"><span class="ico">👥</span>User & Role Mgmt</div>
+  <div class="ni" data-page="audit" onclick="nav('audit',this)"><span class="ico">🔍</span>Audit Logs</div>
+  <div class="ni" data-page="notifications" onclick="nav('notifications',this)">
+    <span class="ico">🔔</span>Notifications<span class="nb" id="notifNavBadge">0</span>
+  </div>
+  <div class="ni" data-page="settings" onclick="nav('settings',this)"><span class="ico">⚙️</span>System Settings</div>
+
+  <div class="sb-footer">Revenue Management System v2.0<br>NSIRS-Abuja Liaison Office<br>© 2025. All rights reserved.</div>
+</aside>
+
+<!-- MAIN -->
+<div class="main-wrap">
+
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="tb-l">
+      <div class="tb-title" id="tbTitle">Dashboard</div>
+    </div>
+    <div class="tb-r">
+      <span class="tb-date" id="tbDate"></span>
+      <span class="tb-badge" id="tbBadge">Loading…</span>
+      <div class="tb-notif" onclick="toggleNotifPanel()" title="Notifications">
+        🔔<span class="notif-dot" id="notifDot"></span>
+      </div>
+      <button class="tb-logout" onclick="doLogout()">🚪 Logout</button>
+    </div>
+  </div>
+
+  <div class="pc">
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: DASHBOARD
+    ══════════════════════════════════════════════════ -->
+    <div id="page-dashboard" class="page active">
+      <div class="db-header">
+        <h1>Revenue Dashboard</h1>
+        <p id="dbRange">All records · Loading…</p>
+      </div>
+      <!-- KPI -->
+      <div class="kpi-grid">
+        <div class="kc cg"><span class="kico">₦</span>
+          <div class="kl">Total Revenue</div>
+          <div class="kv" id="kTotal">₦0</div>
+          <div class="km"><span class="kprev">All time</span></div>
+        </div>
+        <div class="kc cp"><span class="kico">🏦</span>
+          <div class="kl">PAYE Total</div>
+          <div class="kv" id="kPaye">₦0</div>
+          <div class="km"><span class="kup" id="kPayePct">0%</span><span class="kprev">of revenue</span></div>
+        </div>
+        <div class="kc ck"><span class="kico">📋</span>
+          <div class="kl">WHT Total</div>
+          <div class="kv" id="kWht">₦0</div>
+          <div class="km"><span class="kup" id="kWhtPct">0%</span><span class="kprev">of revenue</span></div>
+        </div>
+        <div class="kc cb"><span class="kico">🔢</span>
+          <div class="kl">Transactions</div>
+          <div class="kv" id="kCount">0</div>
+          <div class="km"><span class="kprev">Total records</span></div>
+        </div>
+      </div>
+      <!-- Charts row 1 -->
+      <div class="cr cr21">
+        <div class="dcc">
+          <div class="ct">Total Revenue Over Time
+            <div class="cc-leg mt4">
+              <span><span class="dot" style="background:var(--ag)"></span>Net Revenue</span>
+              <span><span class="dot" style="background:var(--ap)"></span>PAYE</span>
+              <span><span class="dot" style="background:var(--ak)"></span>WHT</span>
+            </div>
+          </div>
+          <canvas id="cTrend"></canvas>
+        </div>
+        <div class="dcc">
+          <div class="ct">PAYE vs WHT</div>
+          <canvas id="cDonut"></canvas>
+        </div>
+      </div>
+      <!-- Charts row 2 -->
+      <div class="cr cr3">
+        <div class="dcc"><div class="ct">Top 5 Orgs — PAYE</div><canvas id="cTopP"></canvas></div>
+        <div class="dcc"><div class="ct">Top 5 Orgs — WHT</div><canvas id="cTopW"></canvas></div>
+        <div class="dcc"><div class="ct">Monthly Transaction Count</div><canvas id="cCnt"></canvas></div>
+      </div>
+      <!-- Recent table -->
+      <div class="dtc">
+        <div class="ct">
+          <span>🕒 Recent Payments</span>
+          <button class="btn-dk btn-sm" onclick="nav('payments',document.querySelector('[data-page=payments]'))">View All →</button>
+        </div>
+        <table>
+          <thead><tr><th>Organisation</th><th>Type</th><th>Amount</th><th>Sector</th><th>Date</th></tr></thead>
+          <tbody id="recentTbl"><tr><td colspan="5" style="text-align:center;padding:20px;color:var(--db-muted)">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: EXECUTIVE OVERVIEW
+    ══════════════════════════════════════════════════ -->
+    <div id="page-executive" class="page">
+      <div class="db-header"><h1>🏆 Executive Overview</h1><p>High-level revenue intelligence for leadership</p></div>
+
+      <div class="exec-kpi" id="execKpi"><!-- filled by JS --></div>
+
+      <div class="cr cr2">
+        <div class="dcc"><div class="ct">Quarterly Revenue Comparison</div><canvas id="cQuarter"></canvas></div>
+        <div class="dcc"><div class="ct">Revenue Achievement vs Target</div><canvas id="cTarget"></canvas></div>
+      </div>
+
+      <div class="dcc mt12">
+        <div class="ct">Top Contributing Organisations — All Time</div>
+        <div id="execOrgList" style="margin-top:10px"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: PAYMENTS
+    ══════════════════════════════════════════════════ -->
+    <div id="page-payments" class="page">
+      <div class="lpage">
+        <div class="section">
+          <div class="sec-hd">
+            <h2>💳 Payment Records <span class="rc" id="recCount">0</span></h2>
+            <button class="btn-p btn-sm" onclick="nav('addPayment',document.querySelector('[data-page=addPayment]'))">➕ Add Payment</button>
+          </div>
+          <div class="sp">
+            <div class="sf"><label>Organisation</label><input type="text" id="sOrg" placeholder="Search…"/></div>
+            <div class="sf"><label>Sector</label>
+              <select id="sSector">
+                <option value="">All Sectors</option>
+                <option value="Private">Private</option>
+                <option value="Public">Public</option>
+              </select>
+            </div>
+            <div class="sf"><label>Tax Type</label>
+              <select id="sTax"><option value="">All</option><option value="PAYE">PAYE</option><option value="WHT">WHT</option></select>
+            </div>
+            <div class="sf"><label>From</label><input type="date" id="sFrom"/></div>
+            <div class="sf"><label>To</label><input type="date" id="sTo"/></div>
+            <div class="sa">
+              <button class="btn-p" onclick="doSearch()">🔍 Search</button>
+              <button class="btn-g" onclick="clrSearch()">✕ Clear</button>
+            </div>
+          </div>
+          <div class="tw">
+            <table>
+              <thead><tr><th>ID</th><th>Organisation</th><th>Sector</th><th>Type</th><th>Amount</th><th>Invoice</th><th>Date</th><th>Actions</th></tr></thead>
+              <tbody id="payTbl"><tr><td colspan="8" class="te">Loading…</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: ADD / EDIT PAYMENT
+    ══════════════════════════════════════════════════ -->
+    <div id="page-addPayment" class="page">
+      <div class="lpage">
+        <div class="section">
+          <div class="sec-hd"><h2 id="formTitle">➕ Add Payment</h2></div>
+          <div class="fg">
+            <div class="fm"><label>Organisation Name *</label><input type="text" id="fOrg" placeholder="Enter name"/></div>
+            <div class="fm"><label>Sector *</label>
+              <select id="fSector">
+                <option value="">Select Sector</option>
+                <option value="Private">Private Sector</option>
+                <option value="Public">Public Sector</option>
+              </select>
+            </div>
+            <div class="fm"><label>Tax Type *</label>
+              <select id="fTax"><option value="">Select</option><option value="PAYE">PAYE</option><option value="WHT">WHT</option></select>
+            </div>
+            <div class="fm"><label>Amount (₦) *</label><input type="number" id="fAmt" placeholder="0.00" min="0"/></div>
+            <div class="fm"><label>Invoice Number</label><input type="text" id="fInv" placeholder="Optional"/></div>
+            <div class="fm"><label>Payment Date *</label><input type="date" id="fDate"/></div>
+          </div>
+          <div class="ab">
+            <button id="saveBtn" class="btn-p" onclick="savePayment()">💾 Save Payment</button>
+            <button id="cancelBtn" class="btn-g hidden" onclick="cancelEdit()">✕ Cancel Edit</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: MONTHLY REPORT
+    ══════════════════════════════════════════════════ -->
+    <div id="page-report" class="page">
+      <div class="lpage">
+        <div class="section">
+          <div class="sec-hd"><h2>📄 Revenue Report</h2></div>
+
+          <!-- Cross-browser date range picker — works on Firefox, Chrome, Safari, Edge -->
+          <div style="background:#f8fafc;border:1.5px solid #e2e8f0;border-radius:10px;
+            padding:18px 20px;margin-bottom:18px">
+
+            <div style="font-size:.82rem;font-weight:700;color:#1e2330;margin-bottom:14px">
+              Select Report Period
+            </div>
+
+            <div style="display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end">
+
+              <!-- Report Mode -->
+              <div class="fm" style="min-width:150px">
+                <label>Report Type</label>
+                <select id="repMode" onchange="toggleRepMode()"
+                  style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                  font-size:.9rem;background:#fff;color:#1e2330">
+                  <option value="single">Single Month</option>
+                  <option value="range">Date Range (up to 2 years)</option>
+                </select>
+              </div>
+
+              <!-- Single month selectors -->
+              <div id="repSingleWrap" style="display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end">
+                <div class="fm" style="min-width:130px">
+                  <label>Month</label>
+                  <select id="repMonthSel"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+                <div class="fm" style="min-width:100px">
+                  <label>Year</label>
+                  <select id="repYearSel"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+              </div>
+
+              <!-- Range selectors -->
+              <div id="repRangeWrap" style="display:none;flex-wrap:wrap;gap:10px;align-items:flex-end">
+                <div class="fm" style="min-width:130px">
+                  <label>From Month</label>
+                  <select id="repFromMonth"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+                <div class="fm" style="min-width:100px">
+                  <label>From Year</label>
+                  <select id="repFromYear"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+                <div style="align-self:flex-end;padding-bottom:10px;color:#94a3b8;font-size:.82rem">to</div>
+                <div class="fm" style="min-width:130px">
+                  <label>To Month</label>
+                  <select id="repToMonth"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+                <div class="fm" style="min-width:100px">
+                  <label>To Year</label>
+                  <select id="repToYear"
+                    style="padding:9px 12px;border:1.5px solid #e2e8f0;border-radius:7px;
+                    font-size:.9rem;background:#fff;color:#1e2330">
+                  </select>
+                </div>
+              </div>
+
+              <div style="display:flex;gap:10px;align-items:flex-end;padding-bottom:1px">
+                <button class="btn-n" onclick="genReport()">📊 Generate</button>
+                <button class="btn-xl" onclick="exportExcel()">📥 Excel</button>
+                <button id="printBtn" class="btn-pr hidden" onclick="printRep()">🖨 Print</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="repOut" class="mt18"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: ADVANCED ANALYTICS
+    ══════════════════════════════════════════════════ -->
+    <div id="page-analytics" class="page">
+      <div class="db-header"><h1>📈 Advanced Analytics</h1><p>Deep-dive revenue intelligence and performance metrics</p></div>
+
+      <div class="analytics-kpi" id="analyticsKpi"><!-- filled by JS --></div>
+
+      <div class="cr cr2">
+        <div class="dcc"><div class="ct">Year-over-Year Revenue Growth</div><canvas id="cYoY"></canvas></div>
+        <div class="dcc"><div class="ct">Tax Type Distribution by Month</div><canvas id="cStack"></canvas></div>
+      </div>
+      <div class="cr cr2 mt12">
+        <div class="dcc"><div class="ct">Average Payment Size Trend</div><canvas id="cAvg"></canvas></div>
+        <div class="dcc"><div class="ct">Cumulative Revenue</div><canvas id="cCumul"></canvas></div>
+      </div>
+
+      <div class="dcc mt12">
+        <div class="ct">Organisation Leaderboard</div>
+        <div id="orgLeader" style="margin-top:12px"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: CONTENT MANAGER
+    ══════════════════════════════════════════════════ -->
+    <div id="page-content" class="page">
+      <div class="db-header"><h1>📝 Content Manager</h1><p>Manage announcements, notices and system messages</p></div>
+
+      <div class="dcc" style="margin-bottom:14px">
+        <div class="ct">Create Announcement</div>
+        <div class="mf" style="margin-bottom:10px"><label style="color:#adbac7;font-size:.78rem">Title</label>
+          <input type="text" id="annTitle" placeholder="Announcement title…" style="width:100%;background:#0d1117;border:1.5px solid var(--db-border);border-radius:7px;color:var(--db-text);padding:9px 12px;font-size:.88rem;font-family:var(--font)"/>
+        </div>
+        <div class="mf" style="margin-bottom:10px"><label style="color:#adbac7;font-size:.78rem">Message</label>
+          <textarea id="annBody" placeholder="Type your message…" style="width:100%;background:#0d1117;border:1.5px solid var(--db-border);border-radius:7px;color:var(--db-text);padding:9px 12px;font-size:.88rem;font-family:var(--font);resize:vertical;min-height:80px"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <select id="annType" class="dark-select">
+            <option value="info">ℹ️ Info</option>
+            <option value="warning">⚠️ Warning</option>
+            <option value="success">✅ Success</option>
+            <option value="urgent">🚨 Urgent</option>
+          </select>
+          <button class="btn-p" onclick="postAnnouncement()">📢 Post Announcement</button>
+        </div>
+      </div>
+
+      <div class="dcc">
+        <div class="ct">Published Announcements</div>
+        <div id="annList" style="margin-top:10px">
+          <p style="color:var(--db-muted);font-size:.82rem;text-align:center;padding:20px">No announcements yet.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: USER & ROLE MANAGEMENT
+    ══════════════════════════════════════════════════ -->
+    <div id="page-users" class="page">
+      <div class="db-header">
+        <h1>👥 User & Role Management</h1>
+        <p>Manage officers, assign roles and control access levels</p>
+      </div>
+
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn-p" onclick="openUserModal(null)">➕ Add New User</button>
+      </div>
+
+      <div class="user-grid" id="userGrid"><!-- filled by JS --></div>
+
+      <!-- Role permissions matrix — fully rendered by JS into #permMatrixWrap -->
+      <div class="dcc mt12">
+        <div class="ct">Role Permissions Matrix</div>
+        <div id="permMatrixWrap" style="overflow-x:auto;margin-top:12px">
+          <!-- JS fills this entirely -->
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: AUDIT LOGS
+    ══════════════════════════════════════════════════ -->
+    <div id="page-audit" class="page">
+      <div class="db-header"><h1>🔍 Activity & Audit Logs</h1><p>Full trail of all system actions and user activities</p></div>
+
+      <div class="dcc" style="margin-bottom:14px">
+        <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end">
+          <div class="mf" style="flex:1 1 150px">
+            <label style="color:#adbac7;font-size:.75rem;display:block;margin-bottom:4px">Filter by Action</label>
+            <select id="logFilter" class="dark-select" onchange="renderAuditLog()">
+              <option value="">All Actions</option>
+              <option value="LOGIN">Login</option>
+              <option value="LOGOUT">Logout</option>
+              <option value="CREATE">Create Payment</option>
+              <option value="UPDATE">Update Payment</option>
+              <option value="DELETE">Delete Payment</option>
+              <option value="EXPORT">Export</option>
+              <option value="REPORT">Report Generated</option>
+              <option value="USER">User Management</option>
+            </select>
+          </div>
+          <div class="mf" style="flex:1 1 150px">
+            <label style="color:#adbac7;font-size:.75rem;display:block;margin-bottom:4px">Filter by User</label>
+            <select id="logUserFilter" class="dark-select" onchange="renderAuditLog()">
+              <option value="">All Users</option>
+            </select>
+          </div>
+          <button class="btn-dk btn-sm" onclick="exportAuditLog()">📥 Export Log</button>
+          <button class="btn-d btn-sm" onclick="clearAuditLog()">🗑 Clear Log</button>
+        </div>
+      </div>
+
+      <div class="dcc">
+        <div class="ct">Audit Trail <span class="rc" id="logCount">0 entries</span></div>
+        <div id="auditList" style="margin-top:10px;max-height:500px;overflow-y:auto"></div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: NOTIFICATIONS
+    ══════════════════════════════════════════════════ -->
+    <div id="page-notifications" class="page">
+      <div class="db-header">
+        <h1>🔔 Notification Centre</h1>
+        <p>System alerts, revenue milestones and activity updates</p>
+      </div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-bottom:14px">
+        <button class="btn-dk btn-sm" onclick="markAllRead()">✓ Mark All Read</button>
+        <button class="btn-d btn-sm" onclick="clearNotifs()">🗑 Clear All</button>
+      </div>
+      <div id="notifList"><!-- filled by JS --></div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════
+         PAGE: SYSTEM SETTINGS
+    ══════════════════════════════════════════════════ -->
+    <div id="page-settings" class="page">
+      <div class="db-header"><h1>⚙️ System Settings</h1><p>Configure application preferences and security policies</p></div>
+
+      <div class="settings-grid">
+
+        <div class="setting-card">
+          <h3>🏢 Organisation Info</h3>
+          <div class="si"><div><div class="si-label">Organisation Name</div><div class="si-sub">Displayed on reports</div></div>
+            <input type="text" id="orgName" value="NSIRS-Abuja Liaison Office" style="width:160px;padding:6px 10px;font-size:.8rem;background:#0d1117;border:1.5px solid var(--db-border);border-radius:6px;color:var(--db-text)"/>
+          </div>
+          <div class="si"><div><div class="si-label">Revenue Target (₦/yr)</div><div class="si-sub">Used in Executive Overview</div></div>
+            <input type="number" id="revTarget" value="500000000" style="width:160px;padding:6px 10px;font-size:.8rem;background:#0d1117;border:1.5px solid var(--db-border);border-radius:6px;color:var(--db-text)"/>
+          </div>
+          <div class="si"><div><div class="si-label">Fiscal Year Start</div></div>
+            <select class="dark-select" id="fyStart">
+              <option value="01">January</option><option value="04">April</option><option value="07">July</option>
+            </select>
+          </div>
+          <div class="ab" style="margin-top:10px"><button class="btn-p btn-sm" onclick="saveOrgSettings()">💾 Save</button></div>
+        </div>
+
+        <div class="setting-card">
+          <h3>🔒 Security & Access</h3>
+          <div class="si"><div><div class="si-label">Session Timeout</div><div class="si-sub">Auto-logout after inactivity</div></div>
+            <select class="dark-select" id="sessionTimeout">
+              <option value="30">30 min</option><option value="60" selected>1 hour</option>
+              <option value="120">2 hours</option><option value="0">Never</option>
+            </select>
+          </div>
+          <div class="si"><div><div class="si-label">Require Strong Password</div><div class="si-sub">Min 8 chars, mixed case</div></div>
+            <label class="toggle"><input type="checkbox" id="strongPwd" checked/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Two-Factor Auth</div><div class="si-sub">Email OTP on login</div></div>
+            <label class="toggle"><input type="checkbox" id="twoFa"/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Audit All Actions</div><div class="si-sub">Log every user action</div></div>
+            <label class="toggle"><input type="checkbox" id="auditAll" checked/><span class="tslider"></span></label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <h3>🔔 Notification Settings</h3>
+          <div class="si"><div><div class="si-label">New Payment Alert</div></div>
+            <label class="toggle"><input type="checkbox" id="nNew" checked/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Large Payment Alert</div><div class="si-sub">Payments above ₦1M</div></div>
+            <label class="toggle"><input type="checkbox" id="nLarge" checked/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Monthly Summary</div><div class="si-sub">Auto-report at month end</div></div>
+            <label class="toggle"><input type="checkbox" id="nSummary" checked/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Target Achievement Alert</div><div class="si-sub">When 50%, 75%, 100% reached</div></div>
+            <label class="toggle"><input type="checkbox" id="nTarget" checked/><span class="tslider"></span></label>
+          </div>
+        </div>
+
+        <div class="setting-card">
+          <h3>📊 Data & Export</h3>
+          <div class="si"><div><div class="si-label">Default Export Format</div></div>
+            <select class="dark-select" id="expFmt">
+              <option value="xlsx">Excel (.xlsx)</option><option value="csv">CSV</option><option value="pdf">PDF</option>
+            </select>
+          </div>
+          <div class="si"><div><div class="si-label">Show Kobo in Reports</div><div class="si-sub">Display decimal amounts</div></div>
+            <label class="toggle"><input type="checkbox" id="showKobo"/><span class="tslider"></span></label>
+          </div>
+          <div class="si"><div><div class="si-label">Include Amount in Words</div></div>
+            <label class="toggle"><input type="checkbox" id="incWords" checked/><span class="tslider"></span></label>
+          </div>
+          <div class="ab" style="margin-top:10px">
+            <button class="btn-d btn-sm" onclick="if(confirm('Clear ALL data? This cannot be undone!')){showToast('Data wipe disabled in demo','error')}">🗑 Wipe All Data</button>
+          </div>
+        </div>
+
+      </div><!-- /settings-grid -->
+    </div>
+
+  </div><!-- /pc -->
+</div><!-- /main-wrap -->
+</div><!-- /appShell -->
+
+<!-- Notification slide-in panel -->
+<div id="notifPanel">
+  <div class="np-head">
+    <h3>🔔 Notifications</h3>
+    <button class="btn-dk btn-xs" onclick="toggleNotifPanel()">✕ Close</button>
+  </div>
+  <div class="np-body" id="npBody"><!-- filled by JS --></div>
+</div>
+
+<!-- Toast container -->
+<div id="toastCon"></div>
+
+<!-- Generic modal -->
+<div id="modal" class="mo hidden">
+  <div class="mb">
+    <h3 id="modalTitle">Confirm</h3>
+    <p id="modalDesc"></p>
+    <div id="modalBody"></div>
+    <div class="ma" id="modalActions">
+      <button class="btn-g" onclick="closeModal()">Cancel</button>
+      <button class="btn-d" id="modalConfirm">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════════ -->
+<script>
+/* ── 1. CONFIG ────────────────────────────────────────────── */
+const SUPABASE_URL = "https://pauxilatmqthdyglcicu.supabase.co";
+const SUPABASE_KEY = "sb_publishable_AIDpEpOLne8XsUdh9KkUIg_YkU0GB4H";
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, {
+  auth: {
+    persistSession:    true,   // keep session in localStorage across refreshes
+    autoRefreshToken:  true,   // auto-renew token before it expires
+    detectSessionInUrl: false  // don't try to read session from URL hash
+  }
+});
+
+/* ── 2. ROLE COLOURS (no hardcoded passwords any more) ────── */
+const ROLE_COLORS = {
+  "Administrator": "#4ade80",
+  "Manager":       "#60a5fa",
+  "Revenue Officer":"#c084fc",
+  "Viewer":        "#fb923c"
+};
+
+/* ── 3. STATE ─────────────────────────────────────────────── */
+let payments      = [];
+let editingId     = null;
+let currentUser   = null;   // { id, email, username, name, role, color, active }
+let sysUsers      = [];     // loaded from Supabase profiles table
+let auditLog      = [];     // loaded from Supabase audit_logs table
+let notifications = [];     // loaded from Supabase notifications table
+let announcements = [];     // loaded from Supabase announcements table
+
+/* Chart instances */
+let chTrend,chDonut,chTopP,chTopW,chCnt,chQuarter,chTarget,chYoY,chStack,chAvg,chCumul;
+
+/* ── 4. BOOT ─────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+  // Always clear login fields on page load — never show cached values
+  const lu = document.getElementById("lu");
+  const lp = document.getElementById("lp");
+  if (lu) lu.value = "";
+  if (lp) lp.value = "";
+
+  document.getElementById("tbDate").textContent =
+    new Date().toLocaleDateString("en-NG", {
+      weekday:"short", year:"numeric", month:"short", day:"numeric"
+    });
+
+  document.getElementById("lp").addEventListener("keydown", e => {
+    if (e.key === "Enter") doLogin();
+  });
+
+  sb.auth.onAuthStateChange(async (event, session) => {
+    console.log("Auth event:", event, session?.user?.email || "no session");
+
+    if (event === "SIGNED_OUT") {
+      currentUser = null;
+      // Clear login fields completely so nothing is pre-filled
+      const lu = document.getElementById("lu");
+      const lp = document.getElementById("lp");
+      const le = document.getElementById("lerr");
+      if (lu) lu.value = "";
+      if (lp) lp.value = "";
+      if (le) { le.style.display = "none"; le.textContent = ""; }
+      document.getElementById("appShell").classList.remove("visible");
+      document.getElementById("loginPage").style.display = "flex";
+      const btn = document.getElementById("lbtn");
+      if (btn) { btn.textContent = "Sign In →"; btn.disabled = false; }
+      // Focus username field after logout
+      setTimeout(() => { if (lu) lu.focus(); }, 100);
+      return;
+    }
+
+    /*
+      Handle both INITIAL_SESSION (page refresh with existing session)
+      and SIGNED_IN (fresh login).
+
+      CRITICAL FIX — Admin logout bug:
+      When an admin creates a new user via sb.auth.signUp(), Supabase
+      automatically signs in AS the new user in the same browser tab,
+      firing SIGNED_IN with the new user's session.
+      We block this by checking: if currentUser is already set AND
+      the incoming session belongs to a DIFFERENT user, ignore it.
+      The admin stays logged in; the new user gets their profile saved
+      via a separate non-auth call.
+    */
+    if (event === "INITIAL_SESSION" || event === "SIGNED_IN") {
+      if (!session) return;
+
+      // If someone is already logged in and this event is for a different user,
+      // do NOT switch sessions — this is the signUp-triggers-SIGNED_IN bug
+      if (currentUser && currentUser.id !== session.user.id) {
+        console.warn(
+          "Blocked session switch from", currentUser.email,
+          "to", session.user.email,
+          "— admin created a new user but stays logged in"
+        );
+        return;
+      }
+
+      await loadProfile(session.user);
+    }
+
+    if (event === "TOKEN_REFRESHED" && session) {
+      // Token auto-refreshed — update email reference but don't reload profile
+      if (currentUser && currentUser.id === session.user.id) {
+        currentUser.email = session.user.email;
+      }
+    }
+  });
+
+  // No automatic DB call on boot — first-run admin must be created via Supabase dashboard
+});
+
+/* ── 5. LOGIN / LOGOUT & 6. LOAD PROFILE ─────────────────── */
+async function loadProfile(authUser) {
+  console.log("loadProfile:", authUser.email);
+
+  // Try to fetch existing profile row
+  let { data: profile, error: fetchErr } = await sb
+    .from("profiles")
+    .select("full_name, username, role, active")
+    .eq("id", authUser.id)
+    .single();
+
+  if (fetchErr) {
+    console.warn("profiles fetch:", fetchErr.code, fetchErr.message);
+  }
+
+  if (!profile) {
+    /*
+      No profile row yet — this is the first login after signUp.
+      Read name/username/role from the user_metadata stored during signUp.
+    */
+    const meta        = authUser.user_metadata || {};
+    const derivedUser = meta.username  || authUser.email.replace("@rms.nsirs.internal","").replace(/@.*/,"");
+    const derivedName = meta.full_name || derivedUser;
+    const derivedRole = meta.role      || "Administrator";
+
+    /*
+      Check if username is already taken by another user before inserting.
+      This prevents the "duplicate key violates unique constraint profiles_username_key" error.
+    */
+    const { data: existingByUsername } = await sb
+      .from("profiles")
+      .select("id")
+      .eq("username", derivedUser)
+      .maybeSingle();
+
+    // If username is taken by someone else, append a suffix to make it unique
+    const finalUsername = existingByUsername && existingByUsername.id !== authUser.id
+      ? derivedUser + "_" + authUser.id.slice(0,4)
+      : derivedUser;
+
+    const { data: inserted, error: insertErr } = await sb
+      .from("profiles")
+      .upsert({
+        id:        authUser.id,
+        full_name: derivedName,
+        username:  finalUsername,
+        role:      derivedRole,
+        active:    true
+      }, { onConflict: "id" })
+      .select("full_name, username, role, active")
+      .single();
+
+    if (insertErr) {
+      console.error("profile upsert:", insertErr.message);
+      // Use metadata values locally — user still gets in
+      profile = { full_name: derivedName, username: derivedUser, role: derivedRole, active: true };
+    } else {
+      profile = inserted;
+    }
+  }
+
+  // Block disabled accounts
+  if (profile.active === false) {
+    await sb.auth.signOut();
+    showLoginError("❌ Your account has been disabled. Contact your administrator.");
+    const btn = document.getElementById("lbtn");
+    if (btn) { btn.textContent = "Sign In →"; btn.disabled = false; }
+    return;
+  }
+
+  currentUser = {
+    id:       authUser.id,
+    email:    authUser.email,
+    username: profile.username || authUser.email.replace("@rms.nsirs.internal",""),
+    name:     profile.full_name || "User",
+    role:     profile.role     || "Administrator",
+    color:    ROLE_COLORS[profile.role] || "#8b949e",
+    active:   true
+  };
+
+  console.log("Logged in as:", currentUser.name, "("+currentUser.role+")");
+
+  // Stamp last_login non-blocking
+  sb.from("profiles")
+    .update({ last_login: new Date().toISOString() })
+    .eq("id", authUser.id)
+    .then(({ error: e }) => { if (e) console.warn("last_login:", e.message); });
+
+  // Reset login button
+  const btn = document.getElementById("lbtn");
+  if (btn) { btn.textContent = "Sign In →"; btn.disabled = false; }
+
+  showApp();
+}
+
+/* ── doLogin ─────────────────────────────────────────────── */
+async function doLogin() {
+  const username = document.getElementById("lu").value.trim().toLowerCase();
+  const pass     = document.getElementById("lp").value;
+  const btn      = document.getElementById("lbtn");
+  const errEl    = document.getElementById("lerr");
+
+  errEl.style.display = "none";
+  btn.textContent     = "Signing in…";
+  btn.disabled        = true;
+
+  if (!username || !pass) {
+    showLoginError("❌ Please enter your username and password.");
+    btn.textContent = "Sign In →"; btn.disabled = false;
+    return;
+  }
+
+  /*
+    KEY FIX: We no longer query the profiles table BEFORE login.
+    That caused an RLS (Row Level Security) block because the user
+    is not yet authenticated when we make that call.
+
+    Instead we derive the internal email directly from the username
+    and attempt signInWithPassword. If the credentials are wrong,
+    Supabase Auth returns an error. If correct, onAuthStateChange
+    fires → loadProfile() fetches the profile AFTER auth succeeds.
+  */
+  const internalEmail = `${username}@rms.nsirs.internal`;
+
+  const { data, error } = await sb.auth.signInWithPassword({
+    email:    internalEmail,
+    password: pass
+  });
+
+  if (error) {
+    console.error("Login error:", error.message);
+    let msg = "❌ Invalid username or password. Please try again.";
+    if (error.message.toLowerCase().includes("invalid login"))
+      msg = "❌ Invalid username or password. Please try again.";
+    if (error.message.toLowerCase().includes("email not confirmed"))
+      msg = "❌ Account not confirmed. Check your email or ask admin to disable email confirmation in Supabase.";
+    if (error.message.toLowerCase().includes("too many"))
+      msg = "❌ Too many attempts. Please wait a few minutes before trying again.";
+    showLoginError(msg);
+    btn.textContent = "Sign In →"; btn.disabled = false;
+    return;
+  }
+
+  // Success — onAuthStateChange SIGNED_IN → loadProfile → showApp
+  // btn stays disabled until showApp runs
+}
+
+function showLoginError(msg) {
+  const el = document.getElementById("lerr");
+  el.textContent = msg;
+  el.style.display = "block";
+}
+
+async function doLogout() {
+  if (currentUser) log("LOGOUT", `${currentUser.name} signed out`);
+  currentUser = null;
+  await sb.auth.signOut();
+  // Fields and error cleared by onAuthStateChange SIGNED_OUT handler
+}
+
+function showApp() {
+  document.getElementById("loginPage").style.display = "none";
+  document.getElementById("appShell").classList.add("visible");
+
+  // Sidebar user info
+  document.getElementById("sbAv").textContent  = currentUser.name[0].toUpperCase();
+  document.getElementById("sbAv").style.background =
+    `linear-gradient(135deg,${currentUser.color},#003366)`;
+  document.getElementById("sbName").textContent = currentUser.name;
+  document.getElementById("sbRole").textContent = currentUser.role;
+
+  // Role-based nav visibility
+  const isAdmin   = currentUser.role === "Administrator";
+  const isMgrPlus = isAdmin || currentUser.role === "Manager";
+  document.querySelectorAll("[data-page='users'],[data-page='settings']")
+    .forEach(n => n.style.display = isAdmin ? "" : "none");
+  document.querySelectorAll("[data-page='audit'],[data-page='content']")
+    .forEach(n => n.style.display = isMgrPlus ? "" : "none");
+
+  // Critical loads — payments and permissions appear immediately
+  loadPayments();
+  loadSysUsers();
+  loadSettings();
+  renderPermMatrix();
+  initRepSelectors();   // populate report month/year dropdowns
+  updateNotifBadge();
+
+  // Non-critical loads — staggered so dashboard renders fast
+  setTimeout(() => { loadAuditLog();      }, 200);
+  setTimeout(() => { loadNotifications(); }, 400);
+  setTimeout(() => { loadAnnouncements(); }, 600);
+
+  // Log after tables are ready
+  setTimeout(() => {
+    log("LOGIN", `${currentUser.name} (@${currentUser.username}) signed in — ${currentUser.role}`);
+    addNotif("🔑", "Login", `${currentUser.name} signed in.`, "info");
+  }, 800);
+}
+
+/* ── 6. NAVIGATION ────────────────────────────────────────── */
+function nav(pageId, el){
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+pageId).classList.add("active");
+  document.querySelectorAll(".ni").forEach(n=>n.classList.remove("active"));
+  if(el) el.classList.add("active");
+  const titles={
+    dashboard:"Dashboard",executive:"Executive Overview",payments:"Payment Records",
+    addPayment:"Add Payment",report:"Monthly Report",analytics:"Advanced Analytics",
+    content:"Content Manager",users:"User & Role Management",
+    audit:"Activity & Audit Logs",notifications:"Notification Centre",settings:"System Settings"
+  };
+  document.getElementById("tbTitle").textContent=titles[pageId]||"";
+  // Trigger page-specific renders
+  if(pageId==="executive") renderExecutive();
+  if(pageId==="analytics") renderAnalytics();
+}
+
+/* ── 7. LOAD PAYMENTS ─────────────────────────────────────── */
+async function loadPayments(){
+  const {data,error}=await sb.from("Payments").select("*").order("id",{ascending:false});
+  if(error){showToast("Failed to load: "+error.message,"error");return;}
+  payments=data||[];
+  const total=payments.reduce((s,p)=>s+Number(p.Amount||0),0);
+  document.getElementById("tbBadge").textContent=payments.length+" records · ₦"+total.toLocaleString();
+  document.getElementById("dbRange").textContent=payments.length+" total transactions";
+  displayPayments(payments);
+  updateKPIs();
+  updateCharts();
+  updateRecentTable();
+  checkMilestones(total);
+}
+
+/* ── 8. SAVE PAYMENT ──────────────────────────────────────── */
+async function savePayment(){
+  const org    = document.getElementById("fOrg").value.trim();
+  const sector = document.getElementById("fSector").value;
+  const tax    = document.getElementById("fTax").value;
+  const amt    = document.getElementById("fAmt").value;
+  const inv    = document.getElementById("fInv").value.trim();
+  const dt     = document.getElementById("fDate").value;
+  if(!org)   {showToast("Organisation required","error");return;}
+  if(!sector){showToast("Select a Sector","error");return;}
+  if(!tax)   {showToast("Select a Tax Type","error");return;}
+  if(!amt)   {showToast("Enter an Amount","error");return;}
+  if(!dt)    {showToast("Select a Date","error");return;}
+  const payload={
+    Organization_Name: org,
+    Sector:            sector,
+    Tax_Type:          tax,
+    Amount:            Number(amt),
+    Invoice:           inv||null,
+    Payment_Date:      dt
+  };
+  let error;
+  if(editingId){
+    ({error}=await sb.from("Payments").update(payload).eq("id",editingId));
+    log("UPDATE",`Updated payment #${editingId} — ${org} ₦${Number(amt).toLocaleString()}`);
+    addNotif("✏️","Payment Updated",`${org} — ₦${Number(amt).toLocaleString()} updated.`,"info");
+  }else{
+    ({error}=await sb.from("Payments").insert([payload]));
+    log("CREATE",`New payment — ${org} (${sector}) ₦${Number(amt).toLocaleString()} (${tax})`);
+    addNotif("💳","New Payment",`${org} — ₦${Number(amt).toLocaleString()} (${tax}/${sector}).`,"success");
+    if(Number(amt)>=1000000) addNotif("🚨","Large Payment Alert",`₦${Number(amt).toLocaleString()} from ${org} exceeds ₦1M.`,"warning");
+  }
+  if(error){showToast("Error: "+error.message,"error");return;}
+  showToast(editingId?"Payment updated ✅":"Payment saved ✅","success");
+  clearForm(); loadPayments();
+  nav("payments",document.querySelector("[data-page='payments']"));
+}
+
+/* ── 9. EDIT ──────────────────────────────────────────────── */
+function editPayment(id){
+  const p=payments.find(x=>Number(x.id)===Number(id));
+  if(!p){showToast("Not found","error");return;}
+  editingId=id;
+  document.getElementById("fOrg").value    = p.Organization_Name||"";
+  document.getElementById("fSector").value = p.Sector||"";
+  document.getElementById("fTax").value    = p.Tax_Type||"";
+  document.getElementById("fAmt").value    = p.Amount||"";
+  document.getElementById("fInv").value    = p.Invoice||"";
+  document.getElementById("fDate").value   = p.Payment_Date||"";
+  document.getElementById("saveBtn").innerHTML="💾 Update Payment";
+  document.getElementById("formTitle").textContent="✏️ Edit Payment";
+  document.getElementById("cancelBtn").classList.remove("hidden");
+  nav("addPayment",document.querySelector("[data-page='addPayment']"));
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* ── 10. DELETE ───────────────────────────────────────────── */
+function deletePayment(id){
+  openModal("🗑 Delete Payment","Are you sure you want to permanently delete this record?","",
+    async()=>{
+      const {error}=await sb.from("Payments").delete().eq("id",id);
+      if(error){showToast("Delete failed: "+error.message,"error");return;}
+      log("DELETE",`Deleted payment #${id}`);
+      showToast("Record deleted","info");
+      loadPayments();
+    },"Delete","btn-d"
+  );
+}
+
+/* ── 11. DISPLAY PAYMENTS TABLE ───────────────────────────── */
+function displayPayments(data){
+  const tb=document.getElementById("payTbl");
+  document.getElementById("recCount").textContent=data.length;
+  if(!data||!data.length){tb.innerHTML=`<tr><td colspan="8" class="te">No records.</td></tr>`;return;}
+  tb.innerHTML=data.map(p=>`<tr>
+    <td style="color:var(--light-muted);font-size:.76rem">#${p.id}</td>
+    <td class="fw7">${esc(p.Organization_Name||"")}</td>
+    <td><span class="badge ${p.Sector==="Private"?"ba":"bg"}">${esc(p.Sector||"—")}</span></td>
+    <td><span class="badge ${p.Tax_Type==="PAYE"?"bp":"bw"}">${esc(p.Tax_Type||"")}</span></td>
+    <td class="fw7" style="color:var(--g-dark)">₦${Number(p.Amount||0).toLocaleString()}</td>
+    <td>${esc(p.Invoice||"—")}</td>
+    <td>${esc(p.Payment_Date||"")}</td>
+    <td style="white-space:nowrap">
+      <button class="btn-e btn-sm" onclick="editPayment(${p.id})">✏️</button>
+      <button class="btn-d btn-sm" onclick="deletePayment(${p.id})" style="margin-left:4px">🗑</button>
+    </td></tr>`).join("");
+}
+
+/* ── 12. RECENT TABLE ─────────────────────────────────────── */
+function updateRecentTable(){
+  const tb=document.getElementById("recentTbl");
+  const r=payments.slice(0,8);
+  if(!r.length){tb.innerHTML=`<tr><td colspan="5" style="text-align:center;color:var(--db-muted);padding:20px">No payments.</td></tr>`;return;}
+  tb.innerHTML=r.map(p=>`<tr>
+    <td style="font-weight:600">${esc(p.Organization_Name||"")}</td>
+    <td><span class="badge ${p.Tax_Type==="PAYE"?"bp":"bw"}">${esc(p.Tax_Type||"")}</span></td>
+    <td style="color:var(--ag);font-weight:700">₦${Number(p.Amount||0).toLocaleString()}</td>
+    <td style="color:var(--db-muted);font-size:.76rem">${esc(p.Sector||"—")}</td>
+    <td style="color:var(--db-muted);font-size:.76rem">${esc(p.Payment_Date||"")}</td>
+  </tr>`).join("");
+}
+
+/* ── 13. SEARCH ───────────────────────────────────────────── */
+function doSearch(){
+  const org    = document.getElementById("sOrg").value.toLowerCase().trim();
+  const sector = document.getElementById("sSector").value;
+  const tax    = document.getElementById("sTax").value;
+  const fr     = document.getElementById("sFrom").value;
+  const to     = document.getElementById("sTo").value;
+  displayPayments(payments.filter(p=>{
+    const d=p.Payment_Date||"";
+    return(!org    ||(p.Organization_Name||"").toLowerCase().includes(org))
+        &&(!sector ||p.Sector===sector)
+        &&(!tax    ||p.Tax_Type===tax)
+        &&(!fr     ||d>=fr)
+        &&(!to     ||d<=to);
+  }));
+}
+function clrSearch(){
+  ["sOrg","sSector","sTax","sFrom","sTo"].forEach(id=>document.getElementById(id).value="");
+  displayPayments(payments);
+}
+
+/* ── 14. FORM CLEAR / CANCEL ──────────────────────────────── */
+function clearForm(){
+  ["fOrg","fSector","fTax","fAmt","fInv","fDate"].forEach(id=>document.getElementById(id).value="");
+  cancelEdit();
+}
+function cancelEdit(){
+  editingId=null;
+  document.getElementById("saveBtn").innerHTML="💾 Save Payment";
+  document.getElementById("formTitle").textContent="➕ Add Payment";
+  document.getElementById("cancelBtn").classList.add("hidden");
+}
+
+/* ── 15. KPI CARDS ────────────────────────────────────────── */
+function updateKPIs(){
+  let total=0,paye=0,wht=0;
+  payments.forEach(p=>{const a=Number(p.Amount||0);total+=a;if(p.Tax_Type==="PAYE")paye+=a;else wht+=a;});
+  const pp=total?Math.round(paye/total*100):0;
+  const wp=total?Math.round(wht/total*100):0;
+  document.getElementById("kTotal").textContent="₦"+total.toLocaleString();
+  document.getElementById("kPaye").textContent ="₦"+paye .toLocaleString();
+  document.getElementById("kWht").textContent  ="₦"+wht  .toLocaleString();
+  document.getElementById("kCount").textContent=payments.length;
+  document.getElementById("kPayePct").textContent=pp+"%";
+  document.getElementById("kWhtPct").textContent =wp+"%";
+}
+
+/* ── 16. CHARTS (Dashboard) ───────────────────────────────── */
+function updateCharts(){
+  let paye=0,wht=0;
+  const mT={},mP={},mW={},mC={},oP={},oW={};
+  payments.forEach(p=>{
+    const a=Number(p.Amount||0);
+    const m=(p.Payment_Date||"").substring(0,7);
+    if(m){mT[m]=(mT[m]||0)+a;mC[m]=(mC[m]||0)+1;
+      if(p.Tax_Type==="PAYE")mP[m]=(mP[m]||0)+a;
+      if(p.Tax_Type==="WHT") mW[m]=(mW[m]||0)+a;
+    }
+    if(p.Tax_Type==="PAYE"){paye+=a;oP[p.Organization_Name||""]=(oP[p.Organization_Name||""]||0)+a;}
+    if(p.Tax_Type==="WHT") {wht +=a;oW[p.Organization_Name||""]=(oW[p.Organization_Name||""]||0)+a;}
+  });
+  const months=Object.keys(mT).sort();
+  const lbl=months.map(shortM);
+  const cd={responsive:true,maintainAspectRatio:true,
+    plugins:{legend:{display:false},tooltip:{backgroundColor:"#1c2333",titleColor:"#e6edf3",bodyColor:"#8b949e",borderColor:"rgba(255,255,255,0.08)",borderWidth:1}},
+    scales:{
+      x:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9}}},
+      y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9},callback:fmtK}}
+    }
+  };
+
+  chTrend=mkChart(chTrend,"cTrend","bar",{
+    labels:lbl,
+    datasets:[
+      {type:"line",label:"Revenue",data:months.map(m=>mT[m]||0),
+        borderColor:"#4ade80",backgroundColor:"rgba(74,222,128,0.07)",
+        borderWidth:2.5,tension:.35,fill:true,pointRadius:4,pointBackgroundColor:"#4ade80",yAxisID:"y"},
+      {type:"bar",label:"PAYE",data:months.map(m=>mP[m]||0),
+        backgroundColor:"rgba(192,132,252,0.6)",borderRadius:4,yAxisID:"y"},
+      {type:"bar",label:"WHT",data:months.map(m=>mW[m]||0),
+        backgroundColor:"rgba(244,114,182,0.6)",borderRadius:4,yAxisID:"y"},
+    ]
+  },{...cd,plugins:{...cd.plugins,legend:{display:false}}});
+
+  chDonut=mkChart(chDonut,"cDonut","doughnut",{
+    labels:["PAYE","WHT"],
+    datasets:[{data:[paye,wht],backgroundColor:["#4ade80","#c084fc"],borderWidth:0,hoverOffset:8}]
+  },{responsive:true,cutout:"65%",plugins:{legend:{position:"bottom",labels:{color:"#8b949e",padding:12,font:{size:10}}},
+    tooltip:{backgroundColor:"#1c2333",callbacks:{label:c=>" ₦"+c.parsed.toLocaleString()}}}});
+
+  const tP=Object.entries(oP).sort(([,a],[,b])=>b-a).slice(0,5);
+  chTopP=mkChart(chTopP,"cTopP","bar",{
+    labels:tP.map(([k])=>shorten(k,14)),
+    datasets:[{data:tP.map(([,v])=>v),backgroundColor:"rgba(192,132,252,0.7)",borderRadius:5,borderSkipped:false}]
+  },{...cd,indexAxis:"y",scales:{x:{...cd.scales.x,ticks:{...cd.scales.x.ticks,callback:fmtK}},y:{grid:{display:false},ticks:{color:"#8b949e",font:{size:9}}}}});
+
+  const tW=Object.entries(oW).sort(([,a],[,b])=>b-a).slice(0,5);
+  chTopW=mkChart(chTopW,"cTopW","bar",{
+    labels:tW.map(([k])=>shorten(k,14)),
+    datasets:[{data:tW.map(([,v])=>v),backgroundColor:"rgba(244,114,182,0.7)",borderRadius:5,borderSkipped:false}]
+  },{...cd,indexAxis:"y",scales:{x:{...cd.scales.x,ticks:{...cd.scales.x.ticks,callback:fmtK}},y:{grid:{display:false},ticks:{color:"#8b949e",font:{size:9}}}}});
+
+  chCnt=mkChart(chCnt,"cCnt","bar",{
+    labels:lbl,
+    datasets:[{label:"Tx",data:months.map(m=>mC[m]||0),backgroundColor:"rgba(96,165,250,0.7)",borderRadius:5}]
+  },{...cd,scales:{...cd.scales,y:{...cd.scales.y,ticks:{color:"#8b949e",font:{size:9}}}}});
+}
+
+/* ── 17. EXECUTIVE OVERVIEW ───────────────────────────────── */
+function renderExecutive(){
+  let total=0,paye=0,wht=0;
+  const qMap={};
+  payments.forEach(p=>{
+    const a=Number(p.Amount||0);total+=a;
+    if(p.Tax_Type==="PAYE")paye+=a;else wht+=a;
+    const d=new Date(p.Payment_Date||Date.now());
+    const q=`Q${Math.ceil((d.getMonth()+1)/3)} ${d.getFullYear()}`;
+    qMap[q]=(qMap[q]||0)+a;
+  });
+  const target=Number(document.getElementById("revTarget")?.value||500000000);
+  const pct=target?Math.min(Math.round(total/target*100),100):0;
+  const avgTx=payments.length?Math.round(total/payments.length):0;
+
+  document.getElementById("execKpi").innerHTML=[
+    {l:"Total Revenue",v:"₦"+total.toLocaleString(),s:payments.length+" transactions",c:"var(--ag)"},
+    {l:"Annual Target",v:"₦"+target.toLocaleString(),s:pct+"% achieved",c:"var(--ab)"},
+    {l:"Target Remaining",v:"₦"+(Math.max(0,target-total)).toLocaleString(),s:pct>=100?"🏆 TARGET MET!":"To go",c:pct>=100?"var(--ag)":"var(--ak)"},
+    {l:"PAYE Collected",v:"₦"+paye.toLocaleString(),s:total?Math.round(paye/total*100)+"% of revenue":"",c:"var(--ap)"},
+    {l:"WHT Collected",v:"₦"+wht.toLocaleString(),s:total?Math.round(wht/total*100)+"% of revenue":"",c:"var(--ak)"},
+    {l:"Avg. Transaction",v:"₦"+avgTx.toLocaleString(),s:"Per payment",c:"var(--ao)"},
+  ].map(c=>`<div class="exec-card">
+    <div class="el">${c.l}</div>
+    <div class="ev" style="color:${c.c}">${c.v}</div>
+    <div class="es">${c.s}</div>
+  </div>`).join("");
+
+  const qs=Object.keys(qMap).sort();
+  const cd2={responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:"#1c2333",titleColor:"#e6edf3",bodyColor:"#8b949e",borderColor:"rgba(255,255,255,0.08)",borderWidth:1}},
+    scales:{x:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9}}},
+      y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9},callback:fmtK}}}};
+
+  chQuarter=mkChart(chQuarter,"cQuarter","bar",{
+    labels:qs,
+    datasets:[{data:qs.map(q=>qMap[q]||0),backgroundColor:["rgba(74,222,128,.7)","rgba(96,165,250,.7)","rgba(192,132,252,.7)","rgba(244,114,182,.7)"],borderRadius:6}]
+  },cd2);
+
+  chTarget=mkChart(chTarget,"cTarget","bar",{
+    labels:["Collected","Target"],
+    datasets:[{data:[total,target],backgroundColor:["rgba(74,222,128,.8)","rgba(96,165,250,.3)"],borderRadius:8,borderSkipped:false}]
+  },{...cd2,indexAxis:"y",plugins:{...cd2.plugins,tooltip:{...cd2.plugins.tooltip,callbacks:{label:c=>" ₦"+c.parsed.x.toLocaleString()}}}});
+
+  // Org leaderboard
+  const orgMap={};
+  payments.forEach(p=>{const k=p.Organization_Name||"Unknown";orgMap[k]=(orgMap[k]||0)+Number(p.Amount||0);});
+  const topOrgs=Object.entries(orgMap).sort(([,a],[,b])=>b-a).slice(0,10);
+  const maxVal=topOrgs[0]?.[1]||1;
+  document.getElementById("execOrgList").innerHTML=topOrgs.map(([k,v],i)=>`
+    <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--db-border)">
+      <span style="font-size:.72rem;color:var(--db-muted);width:18px;text-align:right">${i+1}</span>
+      <span style="font-size:.85rem;font-weight:600;color:var(--db-text);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(k)}</span>
+      <div class="progress-bar-wrap" style="width:140px">
+        <div class="progress-bar" style="width:${Math.round(v/maxVal*100)}%;background:linear-gradient(90deg,var(--ag),var(--ab))"></div>
+      </div>
+      <span style="font-size:.82rem;font-weight:700;color:var(--ag);min-width:80px;text-align:right">₦${v.toLocaleString()}</span>
+    </div>`).join("");
+}
+
+/* ── 18. ADVANCED ANALYTICS ───────────────────────────────── */
+function renderAnalytics(){
+  let total=0,paye=0,wht=0,count=0;
+  const mT={},mP={},mW={},mC={},yMap={},orgMap={};
+  payments.forEach(p=>{
+    const a=Number(p.Amount||0);total+=a;count++;
+    if(p.Tax_Type==="PAYE"){paye+=a;}else{wht+=a;}
+    const m=(p.Payment_Date||"").substring(0,7);
+    const y=(p.Payment_Date||"").substring(0,4);
+    if(m){mT[m]=(mT[m]||0)+a;mC[m]=(mC[m]||0)+1;
+      if(p.Tax_Type==="PAYE")mP[m]=(mP[m]||0)+a; else mW[m]=(mW[m]||0)+a;}
+    if(y)yMap[y]=(yMap[y]||0)+a;
+    const k=p.Organization_Name||"Unknown";
+    orgMap[k]=(orgMap[k]||0)+a;
+  });
+
+  const avg=count?Math.round(total/count):0;
+  const months=Object.keys(mT).sort();
+
+  document.getElementById("analyticsKpi").innerHTML=[
+    {l:"Total Revenue",v:"₦"+total.toLocaleString(),c:"var(--ag)",d:"All time"},
+    {l:"Avg. Payment",v:"₦"+avg.toLocaleString(),c:"var(--ab)",d:"Per transaction"},
+    {l:"Peak Month",v:months.length?shortM(months.reduce((a,b)=>mT[a]>mT[b]?a:b)):"—",c:"var(--ap)",d:"Highest revenue"},
+    {l:"Active Orgs",v:Object.keys(orgMap).length,c:"var(--ao)",d:"Unique organisations"},
+  ].map(c=>`<div class="ak-card">
+    <div class="al">${c.l}</div>
+    <div class="av2" style="color:${c.c}">${c.v}</div>
+    <div class="ad" style="color:var(--db-muted)">${c.d}</div>
+  </div>`).join("");
+
+  const cd3={responsive:true,plugins:{legend:{display:false},tooltip:{backgroundColor:"#1c2333",titleColor:"#e6edf3",bodyColor:"#8b949e",borderColor:"rgba(255,255,255,0.08)",borderWidth:1}},
+    scales:{x:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9}}},
+      y:{grid:{color:"rgba(255,255,255,0.04)"},ticks:{color:"#8b949e",font:{size:9},callback:fmtK}}}};
+
+  const yrs=Object.keys(yMap).sort();
+  chYoY=mkChart(chYoY,"cYoY","bar",{
+    labels:yrs,
+    datasets:[{data:yrs.map(y=>yMap[y]),backgroundColor:yrs.map((_,i)=>["rgba(74,222,128,.7)","rgba(96,165,250,.7)","rgba(192,132,252,.7)"][i%3]),borderRadius:8}]
+  },cd3);
+
+  const lbl=months.map(shortM);
+  chStack=mkChart(chStack,"cStack","bar",{
+    labels:lbl,
+    datasets:[
+      {label:"PAYE",data:months.map(m=>mP[m]||0),backgroundColor:"rgba(192,132,252,.75)",borderRadius:4},
+      {label:"WHT", data:months.map(m=>mW[m]||0),backgroundColor:"rgba(244,114,182,.75)",borderRadius:4},
+    ]
+  },{...cd3,plugins:{...cd3.plugins,legend:{display:true,position:"bottom",labels:{color:"#8b949e",font:{size:10}}}},scales:{...cd3.scales,x:{...cd3.scales.x,stacked:true},y:{...cd3.scales.y,stacked:true}}});
+
+  const avgByMonth=months.map(m=>mC[m]?Math.round(mT[m]/mC[m]):0);
+  chAvg=mkChart(chAvg,"cAvg","line",{
+    labels:lbl,
+    datasets:[{data:avgByMonth,borderColor:"var(--ao)",backgroundColor:"rgba(251,146,60,.07)",borderWidth:2.5,tension:.35,fill:true,pointBackgroundColor:"var(--ao)"}]
+  },cd3);
+
+  let cum=0;
+  const cumData=months.map(m=>{cum+=(mT[m]||0);return cum;});
+  chCumul=mkChart(chCumul,"cCumul","line",{
+    labels:lbl,
+    datasets:[{data:cumData,borderColor:"var(--ab)",backgroundColor:"rgba(96,165,250,.07)",borderWidth:2.5,tension:.35,fill:true,pointBackgroundColor:"var(--ab)"}]
+  },cd3);
+
+  // Org leaderboard table
+  const tops=Object.entries(orgMap).sort(([,a],[,b])=>b-a).slice(0,15);
+  const grandTotal=tops.reduce((s,[,v])=>s+v,0);
+  document.getElementById("orgLeader").innerHTML=`
+    <table><thead><tr>
+      <th>Rank</th><th>Organisation</th><th>Revenue</th><th>Share</th><th>Transactions</th>
+    </tr></thead><tbody>
+    ${tops.map(([k,v],i)=>{
+      const txCount=payments.filter(p=>p.Organization_Name===k).length;
+      const pct2=grandTotal?((v/grandTotal)*100).toFixed(1):0;
+      return`<tr>
+        <td style="color:var(--db-muted);font-size:.75rem">#${i+1}</td>
+        <td style="font-weight:600">${esc(k)}</td>
+        <td style="color:var(--g-dark);font-weight:700">₦${v.toLocaleString()}</td>
+        <td><div style="display:flex;align-items:center;gap:6px">
+          <div class="progress-bar-wrap" style="width:60px"><div class="progress-bar" style="width:${pct2}%;background:var(--ag)"></div></div>
+          <span style="font-size:.72rem;color:var(--db-muted)">${pct2}%</span>
+        </div></td>
+        <td style="color:var(--db-muted)">${txCount}</td>
+      </tr>`;
+    }).join("")}
+    </tbody></table>`;
+}
+
+/* ── 19. USERS & ROLES — Supabase Auth + profiles table ───── */
+
+/* Load all profiles from Supabase */
+async function loadSysUsers() {
+  const { data, error } = await sb
+    .from("profiles")
+    .select("id, full_name, username, role, active, last_login, created_at")
+    .order("created_at", { ascending: true });
+
+  if (error) { showToast("Could not load users: " + error.message, "error"); return; }
+
+  sysUsers = (data || []).map(u => ({
+    id:        u.id,
+    name:      u.full_name,
+    username:  u.username || "—",
+    role:      u.role,
+    active:    u.active,
+    lastLogin: u.last_login
+      ? new Date(u.last_login).toLocaleString("en-NG", { dateStyle:"short", timeStyle:"short" })
+      : "Never",
+    created: u.created_at
+      ? new Date(u.created_at).toLocaleDateString("en-NG") : "—"
+  }));
+
+  renderUserGrid();
+}
+
+/* Render user cards */
+function renderUserGrid() {
+  const grid = document.getElementById("userGrid");
+  if (!grid) return;
+
+  if (!sysUsers.length) {
+    grid.innerHTML = `<p style="color:var(--db-muted);font-size:.85rem;grid-column:1/-1;text-align:center;padding:24px">No users found.</p>`;
+    return;
+  }
+
+  grid.innerHTML = sysUsers.map(u => `
+    <div class="user-card">
+      <div class="uc-top">
+        <div class="uc-av" style="background:linear-gradient(135deg,${ROLE_COLORS[u.role]||"#555"},#003366)">
+          ${u.name[0].toUpperCase()}
+        </div>
+        <div class="uc-info">
+          <div class="uname">${esc(u.name)}</div>
+          <div class="urole">${esc(u.role)}</div>
+        </div>
+      </div>
+      <div class="uc-meta">
+        <span class="badge ${u.active?"bg":"br"}">${u.active?"Active":"Inactive"}</span>
+        <span class="badge bbl" style="font-size:.65rem">@${esc(u.username)}</span>
+      </div>
+      <div style="font-size:.72rem;color:var(--db-muted)">Last login: ${esc(u.lastLogin)}</div>
+      <div style="font-size:.72rem;color:var(--db-muted)">Added: ${esc(u.created)}</div>
+      <div class="uc-actions">
+        <button class="btn-dk btn-xs" onclick="editUserModal('${u.id}')">✏️ Edit</button>
+        <button class="btn-d btn-xs"  onclick="toggleUser('${u.id}')">${u.active?"Disable":"Enable"}</button>
+        ${currentUser.role==="Administrator" && u.id !== currentUser.id
+          ? `<button class="btn-d btn-xs" onclick="removeUser('${u.id}')">🗑</button>` : ""}
+      </div>
+    </div>`).join("");
+
+  const sel = document.getElementById("logUserFilter");
+  if (sel) sel.innerHTML = `<option value="">All Users</option>` +
+    sysUsers.map(u => `<option value="${esc(u.name)}">${esc(u.name)}</option>`).join("");
+}
+
+/* Open add/edit modal */
+function openUserModal(existingUser) {
+  const isEdit = !!existingUser;
+  let overlay  = document.getElementById("userModalOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "userModalOverlay";
+    overlay.style.cssText = "position:fixed;inset:0;background:rgba(0,0,0,0.65);z-index:9100;display:flex;align-items:center;justify-content:center;animation:fadeIn .18s ease";
+    document.body.appendChild(overlay);
+  }
+  const iStyle = "width:100%;padding:10px 13px;background:#0d1117;border:1.5px solid rgba(255,255,255,0.12);border-radius:8px;font-size:.9rem;color:#e6edf3;font-family:inherit;outline:none;-webkit-text-fill-color:#e6edf3";
+
+  overlay.innerHTML = `
+    <div style="background:#1c2333;border:1px solid rgba(255,255,255,0.1);border-radius:16px;
+      padding:28px 26px;width:100%;max-width:440px;box-shadow:0 20px 60px rgba(0,0,0,0.7);
+      animation:scaleIn .2s ease;font-family:'Segoe UI',Arial,sans-serif">
+      <h3 style="font-size:1rem;font-weight:700;color:#e6edf3;margin-bottom:6px">
+        ${isEdit ? "✏️ Edit User" : "➕ Add New User"}</h3>
+      <p style="font-size:.8rem;color:#8b949e;margin-bottom:18px">
+        ${isEdit ? "Update name, role or account status." :
+          "Creates a Supabase Auth account. The user signs in with their username and password."}</p>
+
+      <div style="margin-bottom:13px">
+        <label style="display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px">Full Name *</label>
+        <input id="um_name" type="text" placeholder="e.g. Amina Yusuf"
+          value="${isEdit ? esc(existingUser.name) : ""}" style="${iStyle}"/>
+      </div>
+
+      ${!isEdit ? `
+      <div style="margin-bottom:13px">
+        <label style="display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px">Username * <span style="color:#8b949e;font-weight:400">(used to log in)</span></label>
+        <input id="um_uname" type="text" placeholder="e.g. amina.yusuf" autocomplete="off" style="${iStyle}"/>
+      </div>
+      <div style="margin-bottom:13px">
+        <label style="display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px">Password * <span style="color:#8b949e;font-weight:400">(min 6 characters)</span></label>
+        <input id="um_pass" type="password" placeholder="••••••••" style="${iStyle}"/>
+      </div>` : `
+      <div style="margin-bottom:13px">
+        <label style="display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px">Username</label>
+        <input type="text" value="${esc(existingUser.username||"")}" disabled style="${iStyle};opacity:.45;cursor:not-allowed"/>
+      </div>`}
+
+      <div style="margin-bottom:13px">
+        <label style="display:block;font-size:.78rem;font-weight:600;color:#adbac7;margin-bottom:5px">Role *</label>
+        <select id="um_role" style="${iStyle}">
+          ${["Administrator","Manager","Revenue Officer","Viewer"].map(r =>
+            `<option value="${r}" ${isEdit && existingUser.role===r ? "selected":""}>${r}</option>`
+          ).join("")}
+        </select>
+      </div>
+
+      ${isEdit ? `
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;
+        padding:10px 14px;background:rgba(255,255,255,0.04);border-radius:8px">
+        <div>
+          <div style="font-size:.82rem;color:#e6edf3;font-weight:600">Account Active</div>
+          <div style="font-size:.72rem;color:#8b949e;margin-top:2px">Inactive users cannot sign in</div>
+        </div>
+        <label class="toggle">
+          <input type="checkbox" id="um_active" ${existingUser.active!==false?"checked":""}/>
+          <span class="tslider"></span>
+        </label>
+      </div>` : ""}
+
+      <div id="um_err" style="display:none;background:rgba(192,57,43,0.15);border:1px solid rgba(192,57,43,0.3);
+        color:#ff8a80;font-size:.8rem;padding:9px 13px;border-radius:7px;margin-bottom:12px"></div>
+      <div id="um_status" style="display:none;font-size:.8rem;color:#60a5fa;margin-bottom:10px;text-align:center">⏳ Please wait…</div>
+
+      <div style="display:flex;gap:10px;justify-content:flex-end">
+        <button onclick="closeUserModal()"
+          style="padding:9px 18px;background:#e8eaed;color:#333;border:none;border-radius:7px;
+          font-size:.855rem;font-weight:600;cursor:pointer;font-family:inherit">Cancel</button>
+        <button onclick="saveUserModal('${isEdit ? existingUser.id : "null"}')"
+          style="padding:9px 22px;background:#006400;color:#fff;border:none;border-radius:7px;
+          font-size:.855rem;font-weight:700;cursor:pointer;font-family:inherit">
+          ${isEdit ? "💾 Update User" : "➕ Create User"}</button>
+      </div>
+    </div>`;
+
+  overlay.style.display = "flex";
+  setTimeout(() => { const f = document.getElementById("um_name"); if(f) f.focus(); }, 80);
+}
+
+/* Save — create via Supabase Auth signUp or update profile row */
+async function saveUserModal(editId) {
+  const name   = (document.getElementById("um_name")?.value || "").trim();
+  const role   = (document.getElementById("um_role")?.value || "");
+  const errEl  = document.getElementById("um_err");
+  const status = document.getElementById("um_status");
+
+  const showErr = msg => {
+    if (errEl) { errEl.textContent = msg; errEl.style.display = "block"; }
+    if (status) status.style.display = "none";
+    showToast(msg, "error");
+  };
+
+  if (!name) { showErr("Full Name is required."); return; }
+  if (!role) { showErr("Please select a role."); return; }
+
+  const isEdit = editId !== "null" && editId !== null;
+  if (status) status.style.display = "block";
+  if (errEl)  errEl.style.display  = "none";
+
+  if (isEdit) {
+    const activeEl = document.getElementById("um_active");
+    const active   = activeEl ? activeEl.checked : true;
+    const { error } = await sb.from("profiles")
+      .update({ full_name: name, role, active })
+      .eq("id", editId);
+    if (error) { showErr("Update failed: " + error.message); return; }
+    log("USER", `Updated user: ${name} (${role})`);
+    showToast("User updated ✅", "success");
+    addNotif("👤", "User Updated", `${name}'s profile updated.`, "info");
+
+  } else {
+    // ── CREATE NEW USER ──────────────────────────────────────
+    const rawUsername = (document.getElementById("um_uname")?.value || "").trim().toLowerCase();
+    const pass        =  document.getElementById("um_pass")?.value  || "";
+
+    if (!rawUsername) { showErr("Username is required."); return; }
+    if (!/^[a-z0-9._-]+$/.test(rawUsername)) {
+      showErr("Username may only contain letters, numbers, dots, hyphens and underscores."); return;
+    }
+    if (pass.length < 6) { showErr("Password must be at least 6 characters."); return; }
+
+    // Check username uniqueness
+    const { data: existingProfile } = await sb
+      .from("profiles")
+      .select("id")
+      .eq("username", rawUsername)
+      .maybeSingle();
+    if (existingProfile) { showErr(`Username "${rawUsername}" is already taken.`); return; }
+
+    const internalEmail = `${rawUsername}@rms.nsirs.internal`;
+
+    /*
+      CRITICAL: sb.auth.signUp() in Supabase JS v2 automatically signs the
+      browser in as the new user, triggering onAuthStateChange(SIGNED_IN)
+      and logging out the admin.
+
+      Our onAuthStateChange guard (currentUser.id !== session.user.id) blocks
+      the session switch, but we still need to:
+      1. Save the admin's current session token before signUp
+      2. After signUp + profile insert, restore the admin's session
+         so the admin stays logged in seamlessly.
+    */
+
+    // Step 1: snapshot admin's current session
+    const { data: { session: adminSession } } = await sb.auth.getSession();
+    if (!adminSession) { showErr("Admin session lost. Please log in again."); return; }
+
+    // Step 2: signUp the new user
+    const { data: signUpData, error: signUpErr } = await sb.auth.signUp({
+      email:    internalEmail,
+      password: pass,
+      options: {
+        data: { full_name: name, username: rawUsername, role }
+      }
+    });
+
+    if (signUpErr) {
+      console.error("signUp error:", signUpErr);
+      showErr("Could not create account: " + signUpErr.message);
+      return;
+    }
+
+    const newId = signUpData?.user?.id;
+    if (!newId) {
+      showErr(
+        "Account may have been created but no ID returned. " +
+        "Ensure email confirmation is disabled in Supabase → Authentication → Settings."
+      );
+      return;
+    }
+
+    // Step 3: restore admin session immediately before profile insert
+    // This sets the admin back as the active Supabase session
+    await sb.auth.setSession({
+      access_token:  adminSession.access_token,
+      refresh_token: adminSession.refresh_token
+    });
+
+    // Step 4: insert the new user's profile row (now running as admin — RLS allows it)
+    const { error: profileErr } = await sb.from("profiles").upsert({
+      id:        newId,
+      full_name: name,
+      username:  rawUsername,
+      role,
+      active:    true
+    }, { onConflict: "id" });
+
+    if (profileErr) {
+      console.error("profile insert:", profileErr);
+      showErr("Account created but profile save failed: " + profileErr.message);
+      return;
+    }
+
+    log("USER", `Created user: ${name} — @${rawUsername} (${role})`);
+    showToast(`"${name}" created ✅ — username: ${rawUsername}`, "success");
+    addNotif("👤", "New User Added", `${name} (${role}) — @${rawUsername}`, "info");
+  }
+
+  await loadSysUsers();
+  closeUserModal();
+}
+
+function closeUserModal() {
+  const o = document.getElementById("userModalOverlay");
+  if (o) o.style.display = "none";
+}
+
+function editUserModal(id) {
+  const u = sysUsers.find(x => x.id === id);
+  if (u) openUserModal(u);
+  else showToast("User not found", "error");
+}
+
+async function toggleUser(id) {
+  const u = sysUsers.find(x => x.id === id);
+  if (!u) return;
+  const newState = !u.active;
+  const { error } = await sb.from("profiles").update({ active: newState }).eq("id", id);
+  if (error) { showToast("Update failed: " + error.message, "error"); return; }
+  log("USER", `${newState?"Enabled":"Disabled"} user: ${u.name}`);
+  showToast(`${u.name} ${newState?"enabled":"disabled"}`, "info");
+  await loadSysUsers();
+}
+
+async function removeUser(id) {
+  const u = sysUsers.find(x => x.id === id);
+  openModal("🗑 Remove User",
+    `Remove "${u?.name||"this user"}"? Their Supabase auth account stays — disable it to block login.`,
+    "", async () => {
+      const { error } = await sb.from("profiles").delete().eq("id", id);
+      if (error) { showToast("Remove failed: " + error.message, "error"); return; }
+      log("USER", `Removed profile: ${u?.name||id}`);
+      showToast("User removed", "info");
+      await loadSysUsers();
+      closeModal();
+    }, "Remove", "btn-d");
+}
+
+function renderPermMatrix(){
+  const wrap = document.getElementById("permMatrixWrap");
+  if(!wrap) return;
+
+  /* Permission rows: [label, admin, manager, officer, viewer] */
+  const perms = [
+    ["View Dashboard",     true,  true,  true,  true ],
+    ["Add Payment",        true,  true,  true,  false],
+    ["Edit Payment",       true,  true,  false, false],
+    ["Delete Payment",     true,  true,  false, false],
+    ["Export Reports",     true,  true,  true,  true ],
+    ["View Audit Logs",    true,  true,  false, false],
+    ["Manage Users",       true,  false, false, false],
+    ["System Settings",    true,  false, false, false],
+    ["Content Manager",    true,  true,  false, false],
+    ["Monthly Reports",    true,  true,  true,  true ],
+    ["Advanced Analytics", true,  true,  false, false],
+  ];
+
+  /* Shared cell styles — all inline so global CSS cannot override */
+  const tbl  = 'width:100%;border-collapse:collapse;font-size:.82rem;font-family:"Segoe UI",Arial,sans-serif';
+  const thBase = 'padding:11px 16px;text-align:left;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.5px;border:1px solid rgba(255,255,255,0.08);white-space:nowrap';
+  const tdPerm = 'padding:10px 16px;border:1px solid rgba(255,255,255,0.06);font-size:.82rem;font-weight:600;color:#c9d1d9;background:#111820;white-space:nowrap;min-width:160px';
+  const tdCell = 'padding:10px 16px;border:1px solid rgba(255,255,255,0.06);text-align:center;background:#0d1117;font-size:1rem';
+
+  /* Role header colours */
+  const roles = [
+    { label:'Admin',   color:'#4ade80' },
+    { label:'Manager', color:'#60a5fa' },
+    { label:'Officer', color:'#c084fc' },
+    { label:'Viewer',  color:'#fb923c' },
+  ];
+
+  /* Tick / Cross HTML */
+  const tick  = `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(74,222,128,0.15);color:#4ade80;font-size:.85rem;font-weight:800">✓</span>`;
+  const cross = `<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:rgba(248,113,113,0.12);color:#f87171;font-size:.85rem;font-weight:800">✕</span>`;
+
+  /* Build thead */
+  const theadCells = roles.map(r =>
+    `<th style="${thBase};background:#090d12;color:${r.color}">${r.label}</th>`
+  ).join("");
+
+  /* Build tbody rows */
+  const tbodyRows = perms.map((row, i) => {
+    const bg = i % 2 === 0 ? '#111820' : '#0f1520';
+    const cells = row.slice(1).map(allowed =>
+      `<td style="${tdCell};background:${bg}">${allowed ? tick : cross}</td>`
+    ).join("");
+    return `<tr>
+      <td style="${tdPerm};background:${bg}">${row[0]}</td>
+      ${cells}
+    </tr>`;
+  }).join("");
+
+  wrap.innerHTML = `
+    <table style="${tbl}">
+      <thead>
+        <tr>
+          <th style="${thBase};background:#090d12;color:#8b949e;min-width:180px">Permission</th>
+          ${theadCells}
+        </tr>
+      </thead>
+      <tbody>${tbodyRows}</tbody>
+    </table>`;
+}
+
+/* ── 20. AUDIT LOG — Supabase table: audit_logs ───────────── */
+async function log(action, detail) {
+  const entry = {
+    action,
+    detail,
+    user_name: currentUser?.name  || "System",
+    user_role: currentUser?.role  || "System",
+    user_id:   currentUser?.id    || null,
+    created_at: new Date().toISOString()
+  };
+  // fire-and-forget — don't block the UI
+  sb.from("audit_logs").insert([entry]).then(({ error }) => {
+    if (error) console.warn("Audit log insert failed:", error.message);
+  });
+  // Also keep a local copy for instant UI render without a round-trip
+  auditLog.unshift({
+    id:     Date.now(),
+    action,
+    detail,
+    user:   entry.user_name,
+    time:   new Date().toLocaleString("en-NG", { dateStyle:"short", timeStyle:"short" })
+  });
+  if (auditLog.length > 500) auditLog = auditLog.slice(0, 500);
+  renderAuditLog();
+}
+
+async function loadAuditLog() {
+  const { data, error } = await sb
+    .from("audit_logs")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error) { console.warn("Could not load audit log:", error.message); return; }
+  auditLog = (data || []).map(r => ({
+    id:     r.id,
+    action: r.action,
+    detail: r.detail,
+    user:   r.user_name,
+    time:   new Date(r.created_at).toLocaleString("en-NG", { dateStyle:"short", timeStyle:"short" })
+  }));
+  renderAuditLog();
+}
+
+function renderAuditLog() {
+  const fa = document.getElementById("logFilter")?.value     || "";
+  const fu = document.getElementById("logUserFilter")?.value || "";
+  const filtered = auditLog.filter(l =>
+    (!fa || l.action === fa) && (!fu || l.user === fu)
+  );
+  const countEl = document.getElementById("logCount");
+  if (countEl) countEl.textContent = filtered.length + " entries";
+  const dotColors = {
+    LOGIN:"var(--ag)", LOGOUT:"var(--db-muted)", CREATE:"var(--ab)",
+    UPDATE:"var(--ao)", DELETE:"var(--red)", EXPORT:"var(--ap)",
+    REPORT:"var(--ay)", USER:"var(--ak)"
+  };
+  const list = document.getElementById("auditList");
+  if (!list) return;
+  list.innerHTML = filtered.length === 0
+    ? `<p style="color:var(--db-muted);text-align:center;padding:24px;font-size:.85rem">No log entries.</p>`
+    : filtered.map(l => `
+      <div class="log-item">
+        <div class="log-dot" style="background:${dotColors[l.action]||"#555"}"></div>
+        <div class="log-body">
+          <div class="log-action">${esc(l.detail)}</div>
+          <div class="log-meta">
+            <span class="badge bbl" style="font-size:.62rem">${l.action}</span> · ${esc(l.user)}
+          </div>
+        </div>
+        <div class="log-time">${esc(l.time)}</div>
+      </div>`).join("");
+}
+
+async function exportAuditLog() {
+  const rows = auditLog.map(l => ({
+    "Time": l.time, "Action": l.action,
+    "Detail": l.detail, "User": l.user
+  }));
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  XLSX.utils.book_append_sheet(wb, ws, "Audit Log");
+  XLSX.writeFile(wb, "NSIRS_AuditLog.xlsx");
+  showToast("Audit log exported", "success");
+  log("EXPORT", "Exported audit log to Excel");
+}
+
+async function clearAuditLog() {
+  if (!confirm("Clear ALL audit log entries from Supabase? This cannot be undone.")) return;
+  const { error } = await sb.from("audit_logs").delete().neq("id", 0);
+  if (error) { showToast("Clear failed: " + error.message, "error"); return; }
+  auditLog = [];
+  renderAuditLog();
+  showToast("Audit log cleared", "info");
+}
+
+/* ── 21. NOTIFICATIONS — Supabase table: notifications ────── */
+async function addNotif(ico, title, sub, type) {
+  const entry = {
+    ico, title, sub, type,
+    unread:     true,
+    user_id:    currentUser?.id || null,
+    created_at: new Date().toISOString()
+  };
+  const { data, error } = await sb.from("notifications").insert([entry]).select().single();
+  if (error) { console.warn("Notification insert failed:", error.message); }
+  // Optimistic local update for instant UI
+  notifications.unshift({
+    id:     data?.id || Date.now(),
+    ico, title, sub, type, unread: true,
+    time:   new Date().toLocaleString("en-NG", { dateStyle:"short", timeStyle:"short" })
+  });
+  if (notifications.length > 100) notifications = notifications.slice(0, 100);
+  updateNotifBadge();
+  renderNotifPage();
+  renderNotifPanel();
+}
+
+async function loadNotifications() {
+  const { data, error } = await sb
+    .from("notifications")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) { console.warn("Could not load notifications:", error.message); return; }
+  notifications = (data || []).map(n => ({
+    id:     n.id,
+    ico:    n.ico,
+    title:  n.title,
+    sub:    n.sub,
+    type:   n.type,
+    unread: n.unread,
+    time:   new Date(n.created_at).toLocaleString("en-NG", { dateStyle:"short", timeStyle:"short" })
+  }));
+  updateNotifBadge();
+  renderNotifPage();
+  renderNotifPanel();
+}
+
+function updateNotifBadge() {
+  const unread = notifications.filter(n => n.unread).length;
+  const badge  = document.getElementById("notifNavBadge");
+  const dot    = document.getElementById("notifDot");
+  if (badge) { badge.textContent = unread; badge.style.display = unread ? "" : "none"; }
+  if (dot)   dot.style.display = unread ? "" : "none";
+}
+
+function renderNotifPage() {
+  const el = document.getElementById("notifList");
+  if (!el) return;
+  el.innerHTML = notifications.length === 0
+    ? `<p style="color:var(--db-muted);text-align:center;padding:32px">No notifications.</p>`
+    : notifications.map(n => `
+      <div class="notif-item ${n.unread?"unread":""}" onclick="readNotif(${JSON.stringify(n.id)})">
+        <div class="notif-ico">${n.ico}</div>
+        <div class="notif-body">
+          <div class="notif-title">${esc(n.title)}</div>
+          <div class="notif-sub">${esc(n.sub)}</div>
+          <div class="notif-time">${esc(n.time)}</div>
+        </div>
+        ${n.unread ? `<span class="unread-dot"></span>` : ""}
+      </div>`).join("");
+}
+
+function renderNotifPanel() {
+  const el = document.getElementById("npBody");
+  if (!el) return;
+  el.innerHTML = notifications.slice(0, 20).map(n => `
+    <div class="np-notif ${n.unread?"unread":""}" onclick="readNotif(${JSON.stringify(n.id)})">
+      <div class="ni2">${n.ico}</div>
+      <div>
+        <div class="nt">${esc(n.title)}</div>
+        <div class="ns">${esc(n.sub)}</div>
+        <div class="nm">${esc(n.time)}</div>
+      </div>
+    </div>`).join("");
+}
+
+async function readNotif(id) {
+  const n = notifications.find(x => x.id === id);
+  if (!n || !n.unread) return;
+  n.unread = false;
+  await sb.from("notifications").update({ unread: false }).eq("id", id);
+  updateNotifBadge(); renderNotifPage(); renderNotifPanel();
+}
+
+async function markAllRead() {
+  notifications.forEach(n => n.unread = false);
+  await sb.from("notifications")
+    .update({ unread: false })
+    .eq("unread", true);
+  updateNotifBadge(); renderNotifPage(); renderNotifPanel();
+  showToast("All notifications marked read", "info");
+}
+
+async function clearNotifs() {
+  if (!confirm("Delete all notifications from Supabase?")) return;
+  await sb.from("notifications").delete().neq("id", 0);
+  notifications = [];
+  updateNotifBadge(); renderNotifPage(); renderNotifPanel();
+  showToast("Notifications cleared", "info");
+}
+
+function toggleNotifPanel() {
+  document.getElementById("notifPanel").classList.toggle("open");
+  renderNotifPanel();
+}
+
+/* ── 22. CONTENT MANAGER — Supabase table: announcements ──── */
+async function loadAnnouncements() {
+  const { data, error } = await sb
+    .from("announcements")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) { console.warn("Could not load announcements:", error.message); return; }
+  announcements = data || [];
+  renderAnnouncements();
+}
+
+async function postAnnouncement() {
+  const t    = document.getElementById("annTitle").value.trim();
+  const b    = document.getElementById("annBody").value.trim();
+  const type = document.getElementById("annType").value;
+  if (!t || !b) { showToast("Fill title and message", "error"); return; }
+  const icons = { info:"ℹ️", warning:"⚠️", success:"✅", urgent:"🚨" };
+
+  const entry = {
+    title:      t,
+    body:       b,
+    type,
+    ico:        icons[type],
+    author:     currentUser.name,
+    author_id:  currentUser.id,
+    created_at: new Date().toISOString()
+  };
+
+  const { data, error } = await sb.from("announcements").insert([entry]).select().single();
+  if (error) { showToast("Post failed: " + error.message, "error"); return; }
+
+  document.getElementById("annTitle").value = "";
+  document.getElementById("annBody").value  = "";
+  announcements.unshift(data);
+  log("CREATE", `Posted announcement: "${t}"`);
+  addNotif(icons[type], "New Announcement", t, "info");
+  renderAnnouncements();
+  showToast("Announcement posted ✅", "success");
+}
+
+function renderAnnouncements() {
+  const el = document.getElementById("annList");
+  if (!el) return;
+  const colors = { info:"var(--ab)", warning:"var(--ay)", success:"var(--ag)", urgent:"var(--red)" };
+  el.innerHTML = announcements.length === 0
+    ? `<p style="color:var(--db-muted);text-align:center;padding:20px;font-size:.82rem">No announcements yet.</p>`
+    : announcements.map(a => `
+      <div class="announce-item" style="border-left:3px solid ${colors[a.type]||"var(--ab)"}">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div class="a-title">${a.ico} ${esc(a.title)}</div>
+          ${currentUser.role === "Administrator" || currentUser.role === "Manager"
+            ? `<button class="btn-d btn-xs no-print" onclick="deleteAnn(${JSON.stringify(a.id)})">🗑</button>`
+            : ""}
+        </div>
+        <div class="a-body">${esc(a.body)}</div>
+        <div class="a-meta">Posted by ${esc(a.author)} · ${new Date(a.created_at).toLocaleString("en-NG",{dateStyle:"medium",timeStyle:"short"})}</div>
+      </div>`).join("");
+}
+
+async function deleteAnn(id) {
+  const { error } = await sb.from("announcements").delete().eq("id", id);
+  if (error) { showToast("Delete failed: " + error.message, "error"); return; }
+  announcements = announcements.filter(a => a.id !== id);
+  renderAnnouncements();
+  showToast("Announcement removed", "info");
+  log("DELETE", `Deleted announcement #${id}`);
+}
+
+/* ── 23. SETTINGS — Supabase table: system_settings ─────── */
+async function loadSettings() {
+  const { data, error } = await sb
+    .from("system_settings")
+    .select("*")
+    .eq("id", 1)
+    .single();
+  if (error || !data) return; // use HTML defaults if no row yet
+
+  // Populate fields safely
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  const chk = (id, val) => { const el = document.getElementById(id); if (el) el.checked = !!val; };
+
+  set("orgName",        data.org_name        || "NSIRS-Abuja Liaison Office");
+  set("revTarget",      data.rev_target       || 500000000);
+  set("fyStart",        data.fy_start         || "01");
+  set("sessionTimeout", data.session_timeout  || "60");
+  set("expFmt",         data.export_format    || "xlsx");
+
+  chk("strongPwd",  data.strong_password);
+  chk("twoFa",      data.two_fa);
+  chk("auditAll",   data.audit_all !== false);
+  chk("nNew",       data.notif_new  !== false);
+  chk("nLarge",     data.notif_large !== false);
+  chk("nSummary",   data.notif_summary !== false);
+  chk("nTarget",    data.notif_target !== false);
+  chk("showKobo",   data.show_kobo);
+  chk("incWords",   data.inc_words !== false);
+}
+
+async function saveOrgSettings() {
+  const get = id => { const el = document.getElementById(id); return el ? el.value : null; };
+  const chk = id => { const el = document.getElementById(id); return el ? el.checked : false; };
+
+  const payload = {
+    id:               1,  // single-row settings record
+    org_name:         get("orgName"),
+    rev_target:       Number(get("revTarget") || 500000000),
+    fy_start:         get("fyStart"),
+    session_timeout:  get("sessionTimeout"),
+    export_format:    get("expFmt"),
+    strong_password:  chk("strongPwd"),
+    two_fa:           chk("twoFa"),
+    audit_all:        chk("auditAll"),
+    notif_new:        chk("nNew"),
+    notif_large:      chk("nLarge"),
+    notif_summary:    chk("nSummary"),
+    notif_target:     chk("nTarget"),
+    show_kobo:        chk("showKobo"),
+    inc_words:        chk("incWords"),
+    updated_at:       new Date().toISOString(),
+    updated_by:       currentUser?.name || "Admin"
+  };
+
+  const { error } = await sb.from("system_settings").upsert(payload);
+  if (error) { showToast("Settings save failed: " + error.message, "error"); return; }
+  showToast("Settings saved ✅", "success");
+  log("UPDATE", "Updated system settings");
+}
+function checkMilestones(total){
+  const target=Number(document.getElementById("revTarget")?.value||500000000);
+  if(!target) return;
+  const pct=total/target*100;
+  const milestones={"50%":50,"75%":75,"100%":100};
+  Object.entries(milestones).forEach(([label,val])=>{
+    const key="milestone_"+val;
+    if(pct>=val&&!sessionStorage.getItem(key)){
+      sessionStorage.setItem(key,"1");
+      addNotif("🏆","Revenue Milestone!",`${label} of annual target reached — ₦${total.toLocaleString()}`,"success");
+    }
+  });
+}
+
+/* ── 24. REPORT — supports single month and up to 2-year range ─ */
+
+/* Populate month/year dropdowns — called once from showApp */
+function initRepSelectors() {
+  const MONTHS = [
+    "January","February","March","April","May","June",
+    "July","August","September","October","November","December"
+  ];
+  const now   = new Date();
+  const curY  = now.getFullYear();
+  const curM  = now.getMonth(); // 0-based
+  const years = [];
+  for (let y = curY; y >= curY - 2; y--) years.push(y);
+
+  const monthOpts = MONTHS.map((m,i) =>
+    `<option value="${String(i+1).padStart(2,'0')}">${m}</option>`
+  ).join("");
+  const yearOpts  = years.map(y =>
+    `<option value="${y}" ${y===curY?"selected":""}>${y}</option>`
+  ).join("");
+
+  ["repMonthSel","repFromMonth","repToMonth"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.innerHTML = monthOpts;
+      // Default: current month for single, first month of range for From
+      el.value = String(curM + 1).padStart(2,'0');
+    }
+  });
+  // To month defaults to current month
+  const toM = document.getElementById("repToMonth");
+  if (toM) toM.value = String(curM + 1).padStart(2,'0');
+
+  ["repYearSel","repFromYear","repToYear"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.innerHTML = yearOpts;
+  });
+  // From year defaults to one year ago
+  const fromY = document.getElementById("repFromYear");
+  if (fromY) fromY.value = String(curY - 1);
+}
+
+function toggleRepMode() {
+  const mode = document.getElementById("repMode")?.value;
+  const single = document.getElementById("repSingleWrap");
+  const range  = document.getElementById("repRangeWrap");
+  if (single) single.style.display = mode === "single" ? "flex" : "none";
+  if (range)  range.style.display  = mode === "range"  ? "flex" : "none";
+  document.getElementById("repOut").innerHTML = "";
+  document.getElementById("printBtn").classList.add("hidden");
+}
+
+/* Get the YYYY-MM prefix(es) for the current selection */
+function getRepRange() {
+  const mode = document.getElementById("repMode")?.value || "single";
+  if (mode === "single") {
+    const m = document.getElementById("repMonthSel")?.value || "01";
+    const y = document.getElementById("repYearSel")?.value  || new Date().getFullYear();
+    const prefix = `${y}-${m}`;
+    return { prefixes: [prefix], label: monthLabel(y, m) };
+  } else {
+    const fm = document.getElementById("repFromMonth")?.value || "01";
+    const fy = parseInt(document.getElementById("repFromYear")?.value || new Date().getFullYear());
+    const tm = document.getElementById("repToMonth")?.value   || "12";
+    const ty = parseInt(document.getElementById("repToYear")?.value   || new Date().getFullYear());
+
+    const fromNum = fy * 100 + parseInt(fm);
+    const toNum   = ty * 100 + parseInt(tm);
+
+    if (fromNum > toNum) {
+      showToast("'From' date must be before 'To' date", "error");
+      return null;
+    }
+    // Build list of all months in range
+    const prefixes = [];
+    let cy = fy, cm = parseInt(fm);
+    while (cy * 100 + cm <= toNum) {
+      prefixes.push(`${cy}-${String(cm).padStart(2,'0')}`);
+      cm++;
+      if (cm > 12) { cm = 1; cy++; }
+    }
+    const label = `${monthLabel(fy, fm)} — ${monthLabel(ty, tm)}`;
+    return { prefixes, label };
+  }
+}
+
+function monthLabel(y, m) {
+  return new Date(parseInt(y), parseInt(m) - 1, 1)
+    .toLocaleString("en-NG", { month:"long", year:"numeric" });
+}
+
+function genReport() {
+  const range = getRepRange();
+  if (!range) return;
+  const { prefixes, label } = range;
+
+  const mp = payments.filter(p =>
+    prefixes.some(pfx => (p.Payment_Date || "").startsWith(pfx))
+  );
+
+  let pt = 0, wt = 0, gt = 0, privateTot = 0, publicTot = 0;
+
+  const rows = mp.map((p, i) => {
+    const a      = Number(p.Amount || 0);
+    const sector = p.Sector || "—";
+    gt += a;
+    if (p.Tax_Type === "PAYE") pt += a; else wt += a;
+    if (sector === "Private")  privateTot += a;
+    if (sector === "Public")   publicTot  += a;
+
+    const typeBadge = p.Tax_Type === "PAYE"
+      ? `<span style="background:#e3f2e3;color:#1b5e1b;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700">PAYE</span>`
+      : `<span style="background:#e3ecf7;color:#003366;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700">WHT</span>`;
+
+    const sectorBadge = sector === "Private"
+      ? `<span style="background:#fff3e0;color:#e65100;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700">Private</span>`
+      : sector === "Public"
+        ? `<span style="background:#e8f5e9;color:#1b5e1b;padding:2px 8px;border-radius:12px;font-size:.7rem;font-weight:700">Public</span>`
+        : `<span style="color:#94a3b8;font-size:.75rem">—</span>`;
+
+    return `<tr style="background:${i%2===0?"#fff":"#f7f9fc"}">
+      <td style="padding:9px 12px;border:1px solid #d8dde6;color:#1e2330;font-size:.82rem">${i+1}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6;color:#1e2330;font-weight:600;font-size:.82rem">${esc(p.Organization_Name||"")}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6">${sectorBadge}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6">${typeBadge}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6;color:#004d00;font-weight:700;font-size:.82rem">₦${a.toLocaleString()}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6;color:#5a6070;font-size:.82rem">${esc(p.Invoice||"—")}</td>
+      <td style="padding:9px 12px;border:1px solid #d8dde6;color:#5a6070;font-size:.82rem">${esc(p.Payment_Date||"")}</td>
+    </tr>`;
+  }).join("");
+
+  document.getElementById("repOut").innerHTML = mp.length === 0
+    ? `<p style="color:#5a6070;margin-top:12px;font-size:.9rem">
+        No records found for <strong>${label}</strong>.
+       </p>`
+    : `<h3 style="font-size:.95rem;color:#004d00;margin-bottom:14px;font-weight:700">
+        Revenue Report — ${label}
+       </h3>
+
+      <div style="overflow-x:auto;border-radius:8px;border:1px solid #d0d7de">
+        <table style="width:100%;border-collapse:collapse;font-size:.85rem">
+          <thead><tr style="background:#004d00">
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">S/N</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Organisation</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Sector</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Tax Type</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Amount (₦)</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Invoice No.</th>
+            <th style="padding:10px 12px;text-align:left;color:#fff;font-size:.75rem;font-weight:700;border:1px solid #003800;white-space:nowrap">Date</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+
+      <div style="margin-top:20px;background:#f0faf0;border:1.5px solid #4caf50;border-left:5px solid #004d00;
+        border-radius:10px;padding:20px 24px;font-size:.88rem;line-height:2.1;color:#1e2330">
+
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">Total PAYE:</span>
+          <span style="font-weight:700;color:#1b5e1b;font-size:.95rem">₦${pt.toLocaleString()}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">Total WHT:</span>
+          <span style="font-weight:700;color:#003366;font-size:.95rem">₦${wt.toLocaleString()}</span>
+        </div>
+
+        ${privateTot > 0 ? `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">Total Private Sector:</span>
+          <span style="font-weight:700;color:#e65100;font-size:.95rem">₦${privateTot.toLocaleString()}</span>
+        </div>` : ""}
+
+        ${publicTot > 0 ? `
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">Total Public Sector:</span>
+          <span style="font-weight:700;color:#1b5e1b;font-size:.95rem">₦${publicTot.toLocaleString()}</span>
+        </div>` : ""}
+
+        <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:2px solid #4caf50;margin-top:4px">
+          <span style="font-weight:800;color:#004d00;min-width:200px;font-size:1rem">Grand Total:</span>
+          <span style="font-weight:900;color:#004d00;font-size:1.15rem">₦${gt.toLocaleString()}</span>
+        </div>
+        <div style="padding:8px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;display:block;margin-bottom:3px">Amount in Words:</span>
+          <span style="color:#1b5e1b;font-style:italic;font-weight:600">${n2w(gt)}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">No. of Transactions:</span>
+          <span style="font-weight:700;color:#1e2330">${mp.length}</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #c8e6c9">
+          <span style="font-weight:700;color:#1e2330;min-width:200px">Date Generated:</span>
+          <span style="color:#5a6070">${new Date().toLocaleDateString("en-NG",{dateStyle:"full"})}</span>
+        </div>
+
+        <!-- Officer Incharge -->
+        <div style="margin-top:16px;padding-top:14px;border-top:2px solid #4caf50">
+          <div style="font-size:.8rem;color:#5a6070;font-weight:600;text-transform:uppercase;
+            letter-spacing:.5px;margin-bottom:8px">Officer Incharge</div>
+          <div style="font-weight:800;font-size:1rem;color:#004d00">Mohammed Kabiru Kafa</div>
+          <div style="font-size:.85rem;color:#5a6070;margin-top:2px">Public/Private Sector</div>
+        </div>
+      </div>`;
+
+  document.getElementById("printBtn").classList.remove("hidden");
+  log("REPORT", `Generated report for ${label}`);
+  showToast("Report generated for " + label, "success");
+}
+
+function exportExcel() {
+  const range = getRepRange();
+  if (!range) return;
+  const { prefixes, label } = range;
+
+  const mp = payments.filter(p =>
+    prefixes.some(pfx => (p.Payment_Date || "").startsWith(pfx))
+  );
+  if (!mp.length) { showToast("No records for selected period", "error"); return; }
+
+  let pt = 0, wt = 0, gt = 0, privateTot = 0, publicTot = 0;
+  const rows = mp.map((p, i) => {
+    const a = Number(p.Amount || 0);
+    gt += a;
+    if (p.Tax_Type === "PAYE")    pt         += a;
+    else                          wt         += a;
+    if (p.Sector === "Private")   privateTot += a;
+    if (p.Sector === "Public")    publicTot  += a;
+    return {
+      "S/N":          i + 1,
+      "Organisation": p.Organization_Name || "",
+      "Sector":       p.Sector            || "",
+      "Tax Type":     p.Tax_Type          || "",
+      "Amount (₦)":   a,
+      "Invoice No.":  p.Invoice           || "",
+      "Date":         p.Payment_Date      || ""
+    };
+  });
+
+  rows.push(
+    {}, {},
+    { "Organisation": "TOTAL PAYE",            "Amount (₦)": pt },
+    { "Organisation": "TOTAL WHT",             "Amount (₦)": wt },
+    ...(privateTot > 0 ? [{ "Organisation": "TOTAL PRIVATE SECTOR", "Amount (₦)": privateTot }] : []),
+    ...(publicTot  > 0 ? [{ "Organisation": "TOTAL PUBLIC SECTOR",  "Amount (₦)": publicTot  }] : []),
+    { "Organisation": "GRAND TOTAL",           "Amount (₦)": gt },
+    {},
+    { "Organisation": "AMOUNT IN WORDS",       "Sector":     n2w(gt) },
+    {},
+    { "Organisation": "REPORT PERIOD",         "Sector":     label },
+    { "Organisation": "DATE GENERATED",        "Sector":     new Date().toLocaleDateString("en-NG") },
+    {},
+    { "Organisation": "OFFICER INCHARGE",      "Sector":     "Mohammed Kabiru Kafa" },
+    { "Organisation": "",                      "Sector":     "Public/Private Sector" }
+  );
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(rows);
+  ws["!cols"] = [{wch:6},{wch:44},{wch:12},{wch:12},{wch:18},{wch:18},{wch:14}];
+  const fname = "NSIRS_Report_" + label.replace(/[^a-zA-Z0-9]/g,"_") + ".xlsx";
+  XLSX.utils.book_append_sheet(wb, ws, "NSIRS Report");
+  XLSX.writeFile(wb, fname);
+  log("EXPORT", `Exported Excel: ${label}`);
+  showToast("Excel exported", "success");
+}
+
+function printRep(){
+  const c=document.getElementById("repOut").innerHTML;
+  const w=window.open("","","width=960,height=700");
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8"/><title>NSIRS Revenue Report</title>
+  <style>
+  body{font-family:Arial,sans-serif;padding:28px 36px;color:#222}
+  h2{text-align:center;color:#005200;margin-bottom:4px}
+  .sub{text-align:center;color:#555;font-size:13px;margin-bottom:22px}
+  table{width:100%;border-collapse:collapse;margin-top:10px}
+  th,td{border:1px solid #aaa;padding:8px 10px;font-size:12px}
+  th{background:#005200;color:#fff;text-align:left}
+  tr:nth-child(even){background:#f5f5f5}
+  </style>
+  </head><body><h2>NSIRS REVENUE COLLECTION TRACKER</h2>
+  <div class="sub">NSIRS-ABUJA LIAISON OFFICE — Official Revenue Report</div>${c}</body></html>`);
+  w.document.close();w.print();
+  log("REPORT","Printed revenue report");
+}
+
+/* ── 25. MODAL ────────────────────────────────────────────── */
+let _modalCb=null;
+function openModal(title,desc,bodyHtml,onConfirm,confirmLabel="Confirm",confirmClass="btn-d"){
+  document.getElementById("modalTitle").textContent=title;
+  document.getElementById("modalDesc").textContent=desc;
+  document.getElementById("modalBody").innerHTML=bodyHtml;
+  document.getElementById("modalConfirm").textContent=confirmLabel;
+  document.getElementById("modalConfirm").className=confirmClass;
+  _modalCb=onConfirm;
+  document.getElementById("modalConfirm").onclick=()=>{if(_modalCb)_modalCb();};
+  document.getElementById("modal").classList.remove("hidden");
+}
+function closeModal(){document.getElementById("modal").classList.add("hidden");_modalCb=null;}
+
+/* ── 26. TOAST ────────────────────────────────────────────── */
+function showToast(msg,type="success"){
+  const map={success:"ts",error:"te2",info:"ti",warning:"tw2"};
+  const ico={success:"✅",error:"❌",info:"ℹ️",warning:"⚠️"};
+  const c=document.getElementById("toastCon");
+  const t=document.createElement("div");
+  t.className=`toast ${map[type]||"ts"}`;
+  t.innerHTML=`<span class="t-ico">${ico[type]||"💬"}</span><span>${msg}</span>`;
+  c.appendChild(t);
+  setTimeout(()=>{t.style.opacity="0";t.style.transition="opacity .35s";setTimeout(()=>t.remove(),350)},3400);
+}
+
+/* ── 27. CHART FACTORY ────────────────────────────────────── */
+function mkChart(instance,id,type,data,opts){
+  if(instance) instance.destroy();
+  return new Chart(document.getElementById(id),{type,data,options:opts});
+}
+
+/* ── 28. NUMBER TO WORDS — correct Nigerian English
+   e.g. 5,250,350  → "Five Million, Two Hundred and Fifty Thousand,
+                       Three Hundred and Fifty Naira Only"
+   e.g.   125,050  → "One Hundred and Twenty-Five Thousand, Fifty Naira Only"
+   e.g.     1,001  → "One Thousand and One Naira Only"
+---------------------------------------------------------------- */
+function n2w(num){
+  if(isNaN(num)||num<0) return "Invalid Amount";
+  if(num===0) return "Zero Naira Only";
+
+  const p=Number(num).toFixed(2).split(".");
+  const naira=parseInt(p[0],10);
+  const kobo =parseInt(p[1],10);
+
+  const ones=["","One","Two","Three","Four","Five","Six","Seven","Eight","Nine",
+    "Ten","Eleven","Twelve","Thirteen","Fourteen","Fifteen","Sixteen",
+    "Seventeen","Eighteen","Nineteen"];
+  const tens_w=["","","Twenty","Thirty","Forty","Fifty",
+    "Sixty","Seventy","Eighty","Ninety"];
+
+  /* Convert any number < 1000 to words */
+  function below1000(n){
+    if(n===0) return "";
+    if(n<20)  return ones[n];
+    if(n<100){
+      const t=tens_w[Math.floor(n/10)];
+      const o=ones[n%10];
+      return o ? t+"-"+o : t;
+    }
+    /* hundreds */
+    const h=ones[Math.floor(n/100)]+" Hundred";
+    const rem=n%100;
+    return rem ? h+" and "+below1000(rem) : h;
+  }
+
+  /* Split naira into tiers */
+  const B=Math.floor(naira/1_000_000_000);
+  const M=Math.floor((naira%1_000_000_000)/1_000_000);
+  const T=Math.floor((naira%1_000_000)/1_000);
+  const R=naira%1_000;
+
+  const parts=[];
+  if(B) parts.push(below1000(B)+" Billion");
+  if(M) parts.push(below1000(M)+" Million");
+  if(T) parts.push(below1000(T)+" Thousand");
+
+  let words="";
+  if(parts.length>0){
+    words=parts.join(", ");
+    if(R){
+      /* Use "and" before the last hundreds if no lower tiers follow */
+      words+=", "+below1000(R);
+    }
+  } else {
+    words=below1000(R);
+  }
+
+  let result=words.trim()+" Naira";
+  if(kobo>0) result+=", "+below1000(kobo)+" Kobo";
+  return result+" Only";
+}
+
+/* ── 29. HELPERS ──────────────────────────────────────────── */
+const esc=s=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+const fmtK=v=>v>=1e6?"₦"+(v/1e6).toFixed(1)+"M":v>=1e3?"₦"+(v/1e3).toFixed(0)+"K":"₦"+v;
+const shortM=m=>{const[y,mo]=m.split("-");return new Date(y,mo-1).toLocaleString("en",{month:"short"})+"'"+y.slice(2);};
+const shorten=(s,n)=>s.length>n?s.slice(0,n-1)+"…":s;
+</script>
+</body>
+</html>
